@@ -1,41 +1,93 @@
-# Prerequisites
+# Merged .gitignore: combined original entries with the provided list
+# Kept entries deduplicated and grouped for clarity
+
+# --- Prerequisites ---
 *.d
 
-# Compiled Object files
-*.slo
-*.lo
+# --- Build artifacts and binaries ---
+/build/
+/bin/
+/obj/
+/out/
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
 *.so
-*.dylib
 *.dll
+*.dylib
+*.a
+*.lib
+*.exe
+*.app
+*.out
+
+# --- C/C++ compiled intermediates ---
+*.slo
+*.lo
+*.lai
+*.pch
+*.gch
+*.ilk
+*.idb
+*.pdb
+*.dwo
 
 # Fortran module files
 *.mod
 *.smod
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# --- CMake / Make / build system ---
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+build-*/
+compile_commands.json
 
-# Executables
-*.exe
-*.out
-*.app
+# --- IDE / Editor files ---
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
 
-# debug information files
-*.dwo
+# Visual Studio
+*.suo
+*.user
+*.vcxproj.user
+*.vcproj.user
+*.ncb
+*.opensdf
+*.sdf
+
+# --- OS-specific files ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- External libraries / SDKs (optional) ---
+/external/
+/third_party/
+/vendor/
+
+# --- OpenGL / GLUT / GLFW specific extras (you can add as needed) ---
+libglut*.*
+glfw*.*
+/glfw_build/
+/glad_build/
+/external/glad/
+/external/glfw/
+
+# Shader binaries and generated shader outputs
+*.spv
+/shaders/compiled/
+
+# Documentation / distribution builds
+doc/
+dist/
