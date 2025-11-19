@@ -6,7 +6,7 @@
 #include<_skybox.h>
 #include <_collisioncheck.h>
 #include <_help.h>
-
+#include <_3dmodelloader.h>
 class _menuScene : public _SceneInterface {
 public:
     enum class Mode { MainMenu, InGameMenu };
@@ -68,7 +68,7 @@ private:
     // state
 
     std::string defaultLevelId;
-
+    _3DModelLoader *menuModel = new _3DModelLoader();
     // callbacks
     StartCallback     onStartLevel;
     ResumeCallback    onResume;
@@ -100,7 +100,7 @@ private:
 //    bool  shouldDrawDimOverlay() const { return mode == Mode::PauseOverlay; }
     const char* menuBlockLabel(MenuBlock::Type t) const;
 
-    void menuUpdate();
+    void menuUpdate(double dt);
     void menuRender();
 
     void spawnBullet();

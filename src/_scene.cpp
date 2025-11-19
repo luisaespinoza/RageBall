@@ -49,22 +49,19 @@ void _Scene::render() {
 int _Scene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch(uMsg)
         {
-        case WM_KEYDOWN:
-            if(level){
-            // Let the level own player movement semantics (hallway-local, etc.)
-            static_cast<_level01*>(level.get())->handleKey(uMsg, wParam);
-            }
-        break;
-       case WM_KEYUP:
-
-        break;
 
         case WM_LBUTTONDOWN:
-//            if (_Scene::isAnyMenu()) {
-//                mouseMapping(LOWORD(lParam), HIWORD(lParam));
-//                spawnBullet();
-             //  return 0;
-           // }
+        {
+            // Only throw if we're in gameplay and the current level is _level01
+            if (level) {
+                if (auto* lvl = dynamic_cast<_level01*>(level.get())) {
+                    mouseMapping(LOWORD(lParam), HIWORD(lParam));   // fills msX/msY/msZ
+                    lvl->throwBallAtWorld(msX, msY, msZ);
+                    return 0; // consumed
+                }
+                // else: not a gameplay level (e.g., a menu scene or no level) → ignore
+            }
+        }
             break;
 
         case WM_RBUTTONDOWN:
@@ -167,7 +164,43 @@ void _Scene::mouseMapping(int x, int y)
     gluUnProject(winX,winY,winZ,ModelViewM,projectionM,viewPort,&msX,&msY,&msZ);
 }
 
-
+//void _level01::throwBallFromRay(float nx, float ny, float nz, float fx, float fy, float fz) {
+//    if (!player) return;
+//
+//    // 1) Ray direction (near→far), normalized
+//    vec3 n{nx,ny,nz}, d{fx - nx, fy - ny, fz - nz};
+//    float L = std::sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+//    if (L < 1e-6f) return;
+//    d.x/=L; d.y/=L; d.z/=L;
+//
+//    // 2) Build a far-away target along the ray from the PLAYER (direction matters)
+//    const float aimDist = 50.0f;
+//    vec3 target{
+//        player->position.x + d.x * aimDist,
+//        player->position.y + d.y * aimDist,
+//        player->position.z + d.z * aimDist
+//    };
+//
+//    // 3) Fire toward that target (sets baseDir + initializes projectile state)
+//    player->throwAt(target, /*speed*/18.0f, /*spreadDeg*/5.0f);
+//
+//    // 4) Scale-aware muzzle: offset from player using hallway forward
+//    const _hallway& H = halls[currentHallIndex];                 // authoritative hall this frame
+//    vec3 fwd = H.toWorldDir({0,0,-1});                           // world forward of hall
+//    const float r = player->radius;                               // already matches visual scale
+//
+//    vec3 muzzle{
+//        player->position.x + fwd.x * (0.30f * r),
+//        player->position.y + 1.20f * r,
+//        player->position.z + fwd.z * (0.30f * r)
+//    };
+//
+//    // 5) Override projectile spawn to this muzzle and set bullet radius from player scale
+//    player->ball->src = muzzle;
+//    player->ball->pos = muzzle;
+//    player->ball->radius = std::max(0.02f, 0.40f * r);           // one truth
+//}
+//
 
 //legacy resize logic. No longer used. See onResize() and applyProjection()
 //void _Scene::reSizeScene(int width, int height)

@@ -80,7 +80,7 @@ static std::string resolveRelativeTo(const std::string& baseFile, const std::str
 bool _level01::loadFromTextFile(const std::string& path)
 {
     using std::string;
-    halls.clear();
+    //halls.clear();
 
     // --- Parse-time state from file (applies to ALL halls) ---
     string themeFloor, themeWall, themeCeil;
@@ -377,11 +377,9 @@ static void DebugDrawHallWire(const _hallway& H, float r=1, float g=1, float b=0
 
 
 
-void _level01::loadAssets()
-{
+void _level01::loadAssets() {
     halls.clear();
 
-    // Player
     if (!player) player = new Player();
     player->init("models/megaman/tris.md2", "models/megaman/megaman.pcx", textures);
     player->applyScale(0.005f);
@@ -394,9 +392,28 @@ void _level01::loadAssets()
         loaded = loadFromTextFile(levelPath_);
     }
 
+    if (useArena) {
+        player->ball->setTrajectory(Trajectory_Parabola());
+        arena_.attachLoader(&textures);
+        arena_.configure(/*w*/12.f, /*h*/6.f, /*d*/24.f);
+        arena_.setTransform(0,0,0, /*yaw*/0.f);
+        arena_.setMidlineEnabled(true);
+        arena_.setTeamSide(+1);
+
+        // reuse your textures (adjust paths as needed)
+        char* roomTexture = "images/top.jpg";
+        arena_.loadTheme({ roomTexture,roomTexture,roomTexture });
+
+        // a couple of obstacles, analogous to your demo cubes
+        arena_.addObstacleLocal({{ 0.0f, 0.5f, -6.0f }, 0.f}, 0.6f, &DrawCubeInstance);
+        arena_.addObstacleLocal({{ 2.0f, 0.5f,  3.5f }, 0.f}, 0.6f, &DrawCubeInstance);
+
+        skyReady = false; // unchanged
+        return;
+    }
+
+    // ---- original fallback (kept for now if you toggle useArena_=false) ----
     if (!loaded) {
-            cout<<"I should not print"<<endl;
-        // Fallback: your previous three-hall demo with cubes instead of teapots
         _hallway h0; h0.attachLoader(&textures);
         h0.configure(4.f, 3.f, 20.f, 10);
         h0.setTiling(2,2, 2,2, 2,2);
@@ -412,23 +429,11 @@ void _level01::loadAssets()
 
         halls = { std::move(h0), std::move(h1), std::move(h2) };
     }
-    //optional: diagnostics/debugging
-//    for (int i=0; i+1<(int)halls.size(); ++i) {
-//        _hallway& A = halls[i];
-//        _hallway& B = halls[i+1];
-//        vec3 A_endW   = A.toWorld({0,0,-A.length()});
-//        vec3 B_startW = B.toWorld({0,0,0});
-//        vec3 seam = { B_startW.x - A_endW.x, B_startW.y - A_endW.y, B_startW.z - A_endW.z };
-//        float seamErr = sqrtf(seam.x*seam.x + seam.y*seam.y + seam.z*seam.z);
-//        vec3 fA = A.toWorldDir({0,0,-1});
-//        vec3 fB = B.toWorldDir({0,0,-1});
-//        float align = fA.x*fB.x + fA.y*fB.y + fA.z*fB.z;
-//        if (seamErr > 1e-4f)   printf("[Hall %d→%d] seam offset = %g (should be ~0)\n", i, i+1, seamErr);
-//        if (align < 0.99f)     printf("[Hall %d→%d] forward misalign dot = %g\n", i, i+1, align);
-    }
-
-    skyReady = false; // unchanged
 }
+
+
+bool    skyReady = false; // unchanged
+//}
 
 
 void _level01::unloadAssets()
@@ -459,7 +464,20 @@ void _level01::unloadAssets()
 
 void _level01::reset()
 {
-    player->playerResetLife( 5);
+    player->playerResetLife(5);
+
+    if (useArena) {
+        // spawn in local space near “near wall”, centerline on X
+        const float y0 = 0.5f;
+        const float insetZ = -2.0f;
+        vec3 pL { 0.0f, y0, insetZ };
+
+        // clamp once, convert to world, face forward (local yaw 0 = -Z)
+        pL = arena_.clampLocal(pL, player ? player->radius * 0.95f : 0.4f);
+        player->position = arena_.toWorld(pL);
+        player->yawDeg   = /*arena yaw*/ 0.0f; // worldYawFromLocal(0) since arena yaw is 0 here
+        return;
+    }
     if (halls.empty()) {
         _hallway h;
         h.attachLoader(&textures);
@@ -488,9 +506,10 @@ void _level01::reset()
 
 void _level01::update(double dt)
 {
-    if (!player || halls.empty()) return;
 
-    // --- INPUT (poll) ---
+    if (!player) return;
+
+    // --- INPUT ---
     const bool w = (GetAsyncKeyState(KEY_W) & 0x8000) != 0;
     const bool s = (GetAsyncKeyState(KEY_S) & 0x8000) != 0;
     const bool a = (GetAsyncKeyState(KEY_A) & 0x8000) != 0;
@@ -501,10 +520,73 @@ void _level01::update(double dt)
     float mag = sqrtf(fwd*fwd + str*str);
     if (mag > 1e-6f) { fwd /= mag; str /= mag; }
 
+    if (useArena) {
+        // --- LOCAL velocity ---
+        const float step = player->speed * (float)dt;
+        vec3 vL { str * step, 0.0f, -fwd * step };
+
+        // recompute local pos in arena, convert delta via two points (like halls)
+        vec3 pL = arena_.toLocal(player->position);
+        vec3 w0 = arena_.toWorld(pL);
+        vec3 w1 = arena_.toWorld({ pL.x + vL.x, pL.y + vL.y, pL.z + vL.z });
+        vec3 vW { w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
+
+        // move & clamp inside arena
+        player->moveAndClamp(dt, vW, arena_);  // same template you used with halls
+
+        // ------------- Obstacle collisions (same sphere test) -------------
+        auto sqr = [](float v){ return v*v; };
+        auto hitSphere = [&](float px, float py, float pz, float pr,
+                             float ox, float oy, float oz, float orad) {
+            const float dx = px - ox, dy = py - oy, dz = pz - oz;
+            const float r  = pr + orad;
+            return (sqr(dx) + sqr(dy) + sqr(dz)) <= (r*r);
+        };
+
+        if (player->hurtCooldown > 0.0f)
+            player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
+
+        if (player->hurtCooldown <= 0.f) {
+            bool tookHit = false;
+            arena_.forEachObstacleWorld([&](float ox, float oy, float oz, float radius){
+                if (!tookHit && hitSphere(player->position.x, player->position.y, player->position.z, player->radius,
+                                          ox, oy, oz, radius)) {
+                    tookHit = true;
+                }
+            });
+
+            if (tookHit) {
+                player->life -= 1;
+                player->hurtCooldown = 1.0f;
+                std::cout << "[player] hit! life=" << player->life << "\n";
+                if (player->life <= 0) { this->reset(); return; }
+            }
+        }
+
+        // --- Facing from local motion → world yaw via arena orientation ---
+        if (vL.x*vL.x + vL.z*vL.z > 1e-6f) {
+            const float yawLocalDeg = atan2f(/*x=*/vL.x, /*-z*/-vL.z) * 180.0f / PI;
+            // arena world yaw = arena_.pose_.yawDeg + local yaw
+            player->yawDeg = arena_.pose_.yawDeg + yawLocalDeg;
+        }
+
+        player->setAnimForVelocity(vW);
+        player->updateBall(dt);
+        return;
+    }
+
+    // ---- original hallway path (kept behind the flag) ----
+ if (!player || halls.empty()) return;
+
+    fwd = (w ? 1.f : 0.f) - (s ? 1.f : 0.f);   // forward = local -Z
+    str = (d ? 1.f : 0.f) - (a ? 1.f : 0.f);   // strafe  = local +X
+    mag = sqrtf(fwd*fwd + str*str);
+    if (mag > 1e-6f) { fwd /= mag; str /= mag; }
+
     // --- 1) Decide which hallway is active BEFORE computing velocity ---
     _hallway& Hcur = halls[currentHallIndex];
     vec3 pLcur = Hcur.toLocal(player->position);
-    const float edge = 0.05f;
+     float edge = 0.05f;
 
     // Advance/backtrack hall based on where we are in the *current* hall
     if (fwd > 0.0f && pLcur.z < -Hcur.length() + edge && currentHallIndex + 1 < (int)halls.size()) {
@@ -618,15 +700,17 @@ if (player->hurtCooldown > 0.0f)
 
 // (Optional) animation from motion
     player->setAnimForVelocity(vW);
-
+    player->updateBall(dt);
 
 }
 
 
 
+
+
 void _level01::render(const RenderFlags& flags)
 {
-    printf("[level01] render\n");
+   // printf("[level01] render\n");
     if (flags.showSky && skyReady) {
         glDisable(GL_LIGHTING);
         glDepthMask(GL_FALSE);
@@ -634,22 +718,43 @@ void _level01::render(const RenderFlags& flags)
         glDepthMask(GL_TRUE);
         glEnable(GL_LIGHTING);
     }
-glEnable(GL_LIGHTING);
-for (auto& h : halls) {
-    glPushMatrix();
-    gActiveObstacleTex = h.texWall_;
-    h.render();                     // now self-contained for texture state
-    glPopMatrix();
-}
-gActiveObstacleTex = 0;
+
+    glEnable(GL_LIGHTING);
+
+    if (useArena) {
+        glPushMatrix();
+        arena_.render();
+        glPopMatrix();
+
+        player->render();
+        player->ball->drawBullet();
+        glDisable(GL_LIGHTING);
+        return;
+    }
+    glEnable(GL_LIGHTING);
+    for (auto& h : halls) {
+        glPushMatrix();
+        gActiveObstacleTex = h.texWall_;
+        h.render();                     // now self-contained for texture state
+        glPopMatrix();
+    }
+    gActiveObstacleTex = 0;
 
     for (int i = 0; i+1 < (int)halls.size(); ++i) {
         renderHallSeam(halls[i], halls[i+1]);
     }
     player->render();
+    player->ball->drawBullet();
     glDisable(GL_LIGHTING);
 
 }
+
+
+
+
+
+
+
 void _level01::handleKey(UINT uMsg, WPARAM wParam) {
     //    vec3 vel = player->inputDelta(dt, player->playerInput);
 //    player->setAnimForVelocity(vel);
@@ -657,9 +762,9 @@ void _level01::handleKey(UINT uMsg, WPARAM wParam) {
 //                      player->position.y + vel.y,
 //                      player->position.z + vel.z };
 //
-std::cout /*<< "hall yaw=" << H.hallwayWorldYawDeg()*/
-          << " player yaw=" << player->yawDeg
-          << " baseYawMD2=" << player->baseYawMD2 << "\n";
+//std::cout /*<< "hall yaw=" << H.hallwayWorldYawDeg()*/
+//          << " player yaw=" << player->yawDeg
+//          << " baseYawMD2=" << player->baseYawMD2 << "\n";
 
     switch(wParam)
     {
@@ -720,9 +825,23 @@ void _level01::applyCamera()
         vec3 eye = { center.x, height, center.z };
         vec3 at  = { center.x, 0.0f, center.z };
         gluLookAt(eye.x+20, eye.y, eye.z-20,  at.x+20, at.y, at.z-20,  0,0,-1);
+        return;
     }
-    else
-    {
+    if (useArena) {
+        const float eyeH = 1.6f;
+        const float dist = 3.0f;
+        vec3 fwd = arena_.toWorldDir({0,0,-1});
+        vec3 eye = { player->position.x - fwd.x * dist,
+                     player->position.y + eyeH,
+                     player->position.z - fwd.z * dist };
+        vec3 at  = { player->position.x + fwd.x,
+                     player->position.y + 1.0f,
+                     player->position.z + fwd.z };
+        glMatrixMode(GL_MODELVIEW);
+        gluLookAt(eye.x, eye.y, eye.z, at.x, at.y, at.z, 0,1,0);
+        return;
+        }
+    else {
         // --- Normal 3rd-person follow camera ---
     size_t idx = currentHallIndex;
     if (idx >= halls.size()) idx = 0;
@@ -752,4 +871,77 @@ void _level01::applyCamera()
     glMatrixMode(GL_MODELVIEW);
     gluLookAt(eye.x, eye.y, eye.z, at.x, at.y, at.z, 0, 1, 0);
     }
+}
+// _level01.cpp
+#include <cmath>
+
+void _level01::throwBallFromRay(const vec3& rayOrigin, const vec3& rayDir) {
+    if (!player) return;
+
+    const float yPlane = player->position.y + 1.0f;
+    vec3 targetW{};
+    const float denom = rayDir.y;
+
+    if (std::fabs(denom) > 1e-5f) {
+        const float t = (yPlane - rayOrigin.y) / denom;
+        if (t > 0.0f) {
+            targetW = { rayOrigin.x + t*rayDir.x,
+                        rayOrigin.y + t*rayDir.y,
+                        rayOrigin.z + t*rayDir.z };
+        }
+    }
+    if (targetW.x==0 && targetW.y==0 && targetW.z==0) {
+        targetW = { player->position.x + 8.0f * std::cos(player->yawDeg * 3.14159265f/180.f),
+                    yPlane,
+                    player->position.z - 8.0f * std::sin(player->yawDeg * 3.14159265f/180.f) };
+    }
+
+    // fire
+    player->throwAt(targetW, /*speed*/18.0f, /*spreadDeg*/2.0f);
+
+    // muzzle from arena forward
+    vec3 fwd = arena_.toWorldDir({0,0,-1});
+    const float r = player->radius;
+    vec3 muzzle{
+        player->position.x + fwd.x * (0.30f * r),
+        player->position.y + 1.20f * r,
+        player->position.z + fwd.z * (0.30f * r)
+    };
+    player->ball->src = muzzle;
+    player->ball->pos = muzzle;
+
+    player->ball->radius = std::max(0.2f, 0.40f * r);
+}
+
+void _level01::throwBallAtWorld(double wx, double wy, double wz) {
+    if (!player) return;
+
+    // world target
+    vec3 target{ static_cast<float>(wx),
+                 static_cast<float>(wy),
+                 static_cast<float>(wz) };
+
+    // fire toward that target (fills des, speed, spread, etc.)
+    player->throwAt(target, /*speed*/ 18.0f, /*spreadDeg*/ 5.0f);
+
+    // --- spawn from a "muzzle" anchored to the scaled player ---
+    // use current hallway’s forward to push the spawn a bit in front
+    size_t idx = currentHallIndex;
+    if (idx >= halls.size()) idx = 0;
+    const _hallway& H = halls[idx];
+    vec3 fwd = H.toWorldDir({0,0,-1});           // unit forward in world
+
+    const float r = player->radius;               // already scale-aware (applyScale sets it, :contentReference[oaicite:3]{index=3})
+    vec3 muzzle{
+        player->position.x + fwd.x * (0.30f * r), // slight forward offset
+        player->position.y + 1.20f * r,           // chest-ish height
+        player->position.z + fwd.z * (0.30f * r)
+    };
+
+    // override the source/pos to the muzzle so the shot starts at the chest
+    player->ball->src = muzzle;
+    player->ball->pos = muzzle;
+
+    // scale the visual size of the bullet to the character scale
+    player->ball->radius = std::max(0.02f, 0.40f * r);
 }

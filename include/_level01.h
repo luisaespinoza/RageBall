@@ -9,6 +9,10 @@
 #include<_3dmodelloader.h>
 #include<_model.h>
 #include<_player.h>
+#include<_trajectories.h>
+#include<_enemy.h>
+#include<_arenaRoom.h>
+
 
 class _level01 : public ILevel {
 public:
@@ -31,6 +35,10 @@ public:
     bool loadFromTextFile(const std::string& path);
     void setNextLevelId(const std::string& id) { nextLevelId_ = id; }
     void setRequestNextLevel(std::function<void(const std::string&) > cb) { requestNextLevel_ = std::move(cb); }
+    // From a Scene click (world-unprojected), request the player to throw.
+    void throwBallAtWorld(double wx, double wy, double wz);
+    //shoot along the click ray (near→far)
+    void throwBallFromRay(const vec3& rayOrigin, const vec3& rayDir);
 
 private:
     Player*        player       = nullptr;
@@ -39,12 +47,18 @@ private:
     _skyBox        sky;
     _camera*       levelCamera  = nullptr;
     std::vector<_hallway> halls;
+    _arenaRoom arena_;
+    bool useArena =true;
+    struct ThrowerAI { float cooldown = 1.6f; float t = 0.f; };
+    std::vector<ThrowerAI> enemyAI_;
+    std::vector<std::pair<Pose,float>> hazardsLocal_; // local-space hazards
 
     bool        skyReady   = false;
     std::string levelPath_;
     std::function<void(const std::string&)> requestNextLevel_;
     std::string nextLevelId_;
     bool firedNext_ = false;
+    std::vector<std::unique_ptr<Enemy>> enemies;
 };
 
 #endif // _LEVEL01_H

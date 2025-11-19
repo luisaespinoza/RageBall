@@ -2,20 +2,11 @@
 #define _HALLWAY_H
 #include <_common.h>
 #include<_player.h>
+#include<_geometryUtils.h>
 struct HallwayTheme {
     const char* floorTex = nullptr;
     const char* wallTex  = nullptr; // used for both left/right
     const char* ceilTex  = nullptr;
-};
-struct Pose //Position + Orientation
-{
-    vec3  p;        // position
-    float yawDeg;   // heading around Y (right-handed)
-};
-struct Obstacle {
-    Pose local;
-    float radius;
-    void (*drawFn)();
 };
 
 vec3 normalize(const vec3& v);

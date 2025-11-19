@@ -40,6 +40,12 @@ _menuScene::_menuScene(ResumeCallback onResumeCb, MainMenuCallback onMainCb, Hel
 
 // -------- lifecycle --------
 void _menuScene::onEnter() {
+    char* menuModelFile = "models/megaman/tris.md2";
+    menuModel->initModel(menuModelFile);
+
+    menuBullet.speed=pauseBullet.speed = 36.0f;
+    menuBullet.radius = 1.0f;
+
         std::cout << "[menu] onEnter mode=" << (mode==Mode::InGameMenu?"IGM":"MAIN") << "\n";
     menuBackground->skyBoxInit();
     menuBackground->tex[0] = menuBackground->textures->loadTexture("images/front.jpg");//front/posz
@@ -61,8 +67,8 @@ void _menuScene::onResize(int w, int h) {
 }
 
 // -------- loop --------
-void _menuScene::update(double /*dt*/) {
-    menuUpdate();
+void _menuScene::update(double dt) {
+    menuUpdate(dt);
 }
 
 void _menuScene::render() {
@@ -142,11 +148,11 @@ _menuScene::MenuContext _menuScene::activeMenuContext() {
 }
 
 // -------- update / hit test --------
-void _menuScene::menuUpdate() {
+void _menuScene::menuUpdate(double dt) {
     MenuContext ctx = activeMenuContext();
     if (!ctx.bullet || !ctx.blocks || !ctx.collision) return;
 
-    ctx.bullet->bulletActions();
+    ctx.bullet->bulletActions(dt);
     if (!ctx.bullet->live) return;
 
     constexpr float kBulletRadius = 0.5f;
@@ -208,7 +214,7 @@ void _menuScene::menuRender() {
     // keep depth test on by default
     glEnable(GL_DEPTH_TEST);
     // Optional: draw skybox in main menu
-       if (mode == Mode::MainMenu && menuBackground && !gSkyLoaded) {
+    if (mode == Mode::MainMenu && menuBackground && !gSkyLoaded) {
         menuBackground->skyBoxInit();
         menuBackground->tex[0] = menuBackground->textures->loadTexture("images/front.jpg");
         menuBackground->tex[1] = menuBackground->textures->loadTexture("images/back.jpg");
@@ -217,14 +223,14 @@ void _menuScene::menuRender() {
         menuBackground->tex[4] = menuBackground->textures->loadTexture("images/right.jpg");
         menuBackground->tex[5] = menuBackground->textures->loadTexture("images/left.jpg");
         gSkyLoaded = true;
-            }
-// Draw skybox in BOTH Main Menu and In-Game Menu
-if ((mode == Mode::MainMenu || mode == Mode::InGameMenu) && menuBackground) {
-    ensureMenuSkyboxLoaded(menuBackground);
-    glDisable(GL_DEPTH_TEST);
-    menuBackground->drawSkyBox();
-    glEnable(GL_DEPTH_TEST);
-}
+        }
+    // Draw skybox in BOTH Main Menu and In-Game Menu
+    if ((mode == Mode::MainMenu || mode == Mode::InGameMenu) && menuBackground) {
+        ensureMenuSkyboxLoaded(menuBackground);
+        glDisable(GL_DEPTH_TEST);
+        menuBackground->drawSkyBox();
+        glEnable(GL_DEPTH_TEST);
+    }
 
     // Blocks
 
@@ -260,6 +266,13 @@ if ((mode == Mode::MainMenu || mode == Mode::InGameMenu) && menuBackground) {
     }
 
     // Bullet
+    glPushMatrix();
+    glScalef(0.02f,0.02f,0.02f);
+    glRotatef(-90.0f, 1, 0 ,0 );
+    glRotatef(90.0f, 0,0,1);
+    glTranslatef(0.0f,0.0f,-200.0f);
+    menuModel->Draw();
+    glPopMatrix();
     ctx.bullet->drawBullet();
 
 
@@ -272,7 +285,9 @@ void _menuScene::spawnBullet() {
     if (!ctx.camera || !ctx.bullet) return;
 
     // Aim from camera eye -> world point under cursor (msX, msY, msZ)
-    vec3 eye { ctx.camera->eye.x, ctx.camera->eye.y, ctx.camera->eye.z };
+    //vec3 eye { ctx.camera->eye.x, ctx.camera->eye.y, ctx.camera->eye.z };
+    //from the model. like he is throwing it at it.
+    vec3 eye { 0.0f,-10.0f,-10.0f };
     vec3 hit { static_cast<float>(msX), static_cast<float>(msY), static_cast<float>(msZ) };
 
     vec3 dir { hit.x - eye.x, hit.y - eye.y, hit.z - eye.z };

@@ -1,5 +1,5 @@
 #include "_sceneManager.h"
-
+#include<windowsx.h>
 _sceneManager::_sceneManager()
 {
     //ctor
@@ -231,27 +231,55 @@ void LoadLevelScene::render() {
         level->render(flags);
     }
 }
-int LoadLevelScene::winMsg(HWND /*hWnd*/, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+int LoadLevelScene::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN: {
-            // Ignore auto-repeat: lParam bit 30 is "previous state"
             const bool wasDown = (lParam & (1 << 30)) != 0;
-            if (!wasDown) {
-                level->handleKey(uMsg, wParam);
-            }
+            if (!wasDown && level) level->handleKey(uMsg, wParam);
             return 0;
         }
         case WM_KEYUP:
         case WM_SYSKEYUP: {
-            level->handleKey(uMsg, wParam);
+            if (level) level->handleKey(uMsg, wParam);
             return 0;
+        }
+        case WM_LBUTTONDOWN: {
+            if (!level) return 0;
+
+            // ----- screen -> world ray -----
+            GLdouble proj[16], model[16];
+            GLint    vp[4];
+            glGetDoublev(GL_PROJECTION_MATRIX, proj);
+            glGetDoublev(GL_MODELVIEW_MATRIX,  model);
+            glGetIntegerv(GL_VIEWPORT,         vp);
+
+            const int mx = GET_X_LPARAM(lParam);
+            const int my = GET_Y_LPARAM(lParam);
+            const double sx = static_cast<double>(mx);
+            const double sy = static_cast<double>(vp[3] - my - 1); // invert Y for OpenGL
+
+            GLdouble nx, ny, nz;  // near
+            GLdouble fx, fy, fz;  // far
+            gluUnProject(sx, sy, 0.0, model, proj, vp, &nx, &ny, &nz);
+            gluUnProject(sx, sy, 1.0, model, proj, vp, &fx, &fy, &fz);
+
+            // Ray origin = near point, direction = far - near
+            const float rdx = static_cast<float>(fx - nx);
+            const float rdy = static_cast<float>(fy - ny);
+            const float rdz = static_cast<float>(fz - nz);
+
+            if (auto* l01 = dynamic_cast<_level01*>(level.get())) {
+                l01->throwBallFromRay(
+                    { static_cast<float>(nx), static_cast<float>(ny), static_cast<float>(nz) },
+                    { static_cast<float>(fx - nx), static_cast<float>(fy - ny), static_cast<float>(fz - nz) }
+                );
+            }
         }
         default:
             return 0;
     }
 }
-
 void _sceneManager::initlGL()
 {
     //sanity logic. ensure this function executes once on accidental double calls

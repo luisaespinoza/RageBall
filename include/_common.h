@@ -23,8 +23,9 @@
 #include<cstring>
 #include <cstdio>
 
-#define PI 3.14159
-
+#define PI 3.14159265
+// 32-bit golden-ratio constant (used for RNG seeding / hashing)
+constexpr uint32_t GOLDEN_RATIO = 0x9E3779B9u;
 using namespace std;
 
 typedef struct{
