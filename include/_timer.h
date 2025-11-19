@@ -16,6 +16,7 @@ class _timer
 
         void pauseTime();      // For you to implement
         void resumeTime();
+        bool enabled;
 
     protected:
 

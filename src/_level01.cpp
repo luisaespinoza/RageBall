@@ -375,15 +375,26 @@ static void DebugDrawHallWire(const _hallway& H, float r=1, float g=1, float b=0
 }
 
 
-
-
 void _level01::loadAssets() {
     halls.clear();
-
+    // Collision Checker //
+    collisionChecker = new _collisionCheck();
+    // Pickup item -- swap to vector to add multiple later
+    pickupItem = new _pickup();
+    pickupItem->pickupInit(_pickup::HEALTH);
+    pickupItem->pSize = {0.45f,0.6f,0.6f};
+    pickupItem->pos = {0.0f, 0.4f, 2.0f};
+    pickupItem->life = 1; // one life point on pickup
+    // Effect upon picking up health ring -- change for other pickups later -- can add more sprite images if needed
+    healthRingEffect = new _sprite();
+    healthRingEffect->spriteInit("images/health_ring_effect.png",1,1);
+    // Timer for health ring animation //
+    healthRingEffectTimer = _timer();
+    healthRingEffectTimer.enabled = false;
     if (!player) player = new Player();
     player->init("models/megaman/tris.md2", "models/megaman/megaman.pcx", textures);
     player->applyScale(0.005f);
-    player->position = {0.f, 0.0f, -2.f};
+    player->position = {0.0f, 0.0f, -2.0f};
     player->radius   = 0.05f;
     currentHallIndex = 0;
 
@@ -564,6 +575,14 @@ void _level01::update(double dt)
             }
         }
 
+        if (collisionChecker->isSphereCol(pickupItem->pos,player->position,pickupItem->pSize.x,player->radius,0.0f) && !pickupItem->isCollected) {
+            pickupItem->applyEffect(player);
+            healthRingEffectTimer.enabled = true;
+            healthRingEffectTimer.reset();
+            healthRingEffect->pos = pickupItem->pos;
+            std::cout << "[player] picked up health! life=" << player->life << "\n";
+        }
+
         // --- Facing from local motion → world yaw via arena orientation ---
         if (vL.x*vL.x + vL.z*vL.z > 1e-6f) {
             const float yawLocalDeg = atan2f(/*x=*/vL.x, /*-z*/-vL.z) * 180.0f / PI;
@@ -729,6 +748,14 @@ void _level01::render(const RenderFlags& flags)
 
         player->render();
         player->ball->drawBullet();
+        //pickupItem->pos = player->position; // for testing
+        pickupItem->drawSprite();
+        if (healthRingEffectTimer.getTicks() < 2000 && healthRingEffectTimer.enabled) { // Effect lasts for two seconds, long but good for testing
+            healthRingEffect->pSize.x += 0.006f; // Animation scale effect
+            healthRingEffect->pSize.y += 0.006f; 
+            healthRingEffect->pSize.z += 0.006f; 
+            healthRingEffect->drawSprite();
+        }
         glDisable(GL_LIGHTING);
         return;
     }

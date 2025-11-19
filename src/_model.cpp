@@ -39,6 +39,6 @@ void _model::drawModel()
     glScaled(scale,scale,scale);  // Scale your model
    // glutSolidTorus(0.5,1.5,40,40); //Draw model
 
-    glutSolidTeapot(1.5);
+    //glutSolidTeapot(1.5);
     glPopMatrix();                 //End group
 }

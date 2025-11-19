@@ -12,6 +12,10 @@
 #include<_trajectories.h>
 #include<_enemy.h>
 #include<_arenaRoom.h>
+#include<_sprite.h>
+#include<_pickup.h>
+#include<_collisioncheck.h>
+#include<_timer.h>
 
 
 class _level01 : public ILevel {
@@ -59,6 +63,10 @@ private:
     std::string nextLevelId_;
     bool firedNext_ = false;
     std::vector<std::unique_ptr<Enemy>> enemies;
+    _pickup* pickupItem = nullptr;  // Change to vector to add multiple later
+    _collisionCheck* collisionChecker = nullptr;
+    _sprite* healthRingEffect = nullptr;
+    _timer healthRingEffectTimer;
 };
 
 #endif // _LEVEL01_H
