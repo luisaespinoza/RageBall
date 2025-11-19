@@ -17,6 +17,9 @@ _sprite::_sprite()
     vertX[1].x =  0.5; vertX[1].y = -0.5; vertX[1].z=1;
     vertX[2].x =  0.5; vertX[2].y =  0.5; vertX[2].z=1;
     vertX[3].x = -0.5; vertX[3].y =  0.5; vertX[3].z=1;
+    pSize.x =1;
+    pSize.y =1;
+    pSize.z =1;
 }
 
 _sprite::~_sprite()
@@ -39,25 +42,31 @@ void _sprite::spriteInit(char* fileName, int xFrames, int yFrames)
 void _sprite::drawSprite()
 {
     glPushMatrix();
-     glTranslatef(pos.x,pos.y,pos.z);
-     myTex->bindTexture();
+    glTranslatef(pos.x,pos.y,pos.z);
+    myTex->bindTexture();
+    // Apply Scale //
+    glScalef(pSize.x,pSize.y,pSize.z);
+    // Apply Transformations //
+    glTranslatef(pos.x,pos.y,pos.z);
+    // Apply Rotation //
+    glRotatef(rot.x, 1.0, 0.0, 0.0);
+    glRotatef(rot.y, 0.0, 1.0, 0.0);
+    glRotatef(rot.z, 0.0, 0.0, 1.0);
+    // Draw Quad //
+    glBegin(GL_QUADS);
+        glTexCoord2f(xMin,yMax);
+        glVertex2f(vertX[0].x,vertX[0].y);
 
+        glTexCoord2f(xMax,yMax);
+        glVertex2f(vertX[1].x,vertX[1].y);
 
-     glBegin(GL_QUADS);
-       glTexCoord2f(xMin,yMax);
-       glVertex2f(vertX[0].x,vertX[0].y);
+        glTexCoord2f(xMax,yMin);
+        glVertex2f(vertX[2].x,vertX[2].y);
 
-       glTexCoord2f(xMax,yMax);
-       glVertex2f(vertX[1].x,vertX[1].y);
+        glTexCoord2f(xMin,yMin);
+        glVertex2f(vertX[3].x,vertX[3].y);
 
-       glTexCoord2f(xMax,yMin);
-       glVertex2f(vertX[2].x,vertX[2].y);
-
-       glTexCoord2f(xMin,yMin);
-       glVertex2f(vertX[3].x,vertX[3].y);
-
-     glEnd();
-
+    glEnd();
     glPopMatrix();
 }
 
