@@ -393,7 +393,8 @@ void _level01::loadAssets() {
     }
 
     if (useArena) {
-        player->ball->setTrajectory(Trajectory_Parabola());
+        player->ball->setTrajectory(Trajectory_Parabola(3.0f));
+        player->ball->setInaccuracyCone(15.0f);
         arena_.attachLoader(&textures);
         arena_.configure(/*w*/12.f, /*h*/6.f, /*d*/24.f);
         arena_.setTransform(0,0,0, /*yaw*/0.f);
@@ -878,29 +879,51 @@ void _level01::applyCamera()
 void _level01::throwBallFromRay(const vec3& rayOrigin, const vec3& rayDir) {
     if (!player) return;
 
-    const float yPlane = player->position.y + 1.0f;
-    vec3 targetW{};
-    const float denom = rayDir.y;
+    // Normalize the incoming ray direction
+    vec3 dir = rayDir;
+    float L = sqrtf(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z);
+    if (L > 1e-6f) { dir.x/=L; dir.y/=L; dir.z/=L; }
 
-    if (std::fabs(denom) > 1e-5f) {
+    const float yPlane = player->position.y + 1.0f;  // hand-ish height
+    vec3 targetW{};
+    bool have = false;
+
+    // 1) Preferred: intersect the click ray with the horizontal plane at yPlane
+    const float denom = dir.y;
+    if (fabsf(denom) > 1e-5f) {
         const float t = (yPlane - rayOrigin.y) / denom;
-        if (t > 0.0f) {
-            targetW = { rayOrigin.x + t*rayDir.x,
-                        rayOrigin.y + t*rayDir.y,
-                        rayOrigin.z + t*rayDir.z };
+        if (t > 0.1f) { // only accept intersections IN FRONT of the camera by a bit
+            targetW = { rayOrigin.x + t*dir.x, yPlane, rayOrigin.z + t*dir.z };
+            have = true;
         }
     }
-    if (targetW.x==0 && targetW.y==0 && targetW.z==0) {
-        targetW = { player->position.x + 8.0f * std::cos(player->yawDeg * 3.14159265f/180.f),
-                    yPlane,
-                    player->position.z - 8.0f * std::sin(player->yawDeg * 3.14159265f/180.f) };
+
+    // 2) Fallback: take a point some distance along the ray, then drop to the plane
+    if (!have) {
+        const float s = 20.0f; // “throw at something 20 units out” in the clicked direction
+        vec3 p = { rayOrigin.x + s*dir.x,
+                   rayOrigin.y + s*dir.y,
+                   rayOrigin.z + s*dir.z };
+        targetW = { p.x, yPlane, p.z };
     }
 
-    // fire
-    player->throwAt(targetW, /*speed*/18.0f, /*spreadDeg*/2.0f);
+    // Fire the throw with a lobby arc so it feels good at all distances
+    player->throwAt(targetW, /*throwSpeed*/18.0f, /*spreadDeg*/2.0f);
+//    player->ball->setTrajectory(Trajectory_Lob());  // gentle arc
+    // (Or tweak: Trajectory_Parabola(9.8f))
 
-    // muzzle from arena forward
-    vec3 fwd = arena_.toWorldDir({0,0,-1});
+    // Place the muzzle in front of the player, using your space's forward
+    vec3 fwd{0,0,0};
+    if (!halls.empty()) {
+        size_t idx = currentHallIndex; if (idx >= halls.size()) idx = 0;
+        fwd = halls[idx].toWorldDir({0,0,-1});
+    } else {
+        // if you’ve switched to arena_, use it; else fall back to yaw
+        // fwd = arena_.toWorldDir({0,0,-1});
+        float yr = player->yawDeg * (PI/180.f);
+        fwd = { std::sin(yr), 0.f, -std::cos(yr) };
+    }
+
     const float r = player->radius;
     vec3 muzzle{
         player->position.x + fwd.x * (0.30f * r),
