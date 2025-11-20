@@ -5,7 +5,7 @@
 #include<_textureloader.h>
 #include<_bullets.h>
 #include<_spatialNav.h>
-
+#include<_character.h>
 
 struct PlayerInput {
     bool moveFwd  = false;
@@ -13,7 +13,7 @@ struct PlayerInput {
     bool moveLeft = false;
     bool moveRight= false;
 };
-struct Player {
+struct Player : public Character {
     _3DModelLoader model;
     vec3 position{0,0,0};
     float yawDeg = 0.f;
@@ -23,6 +23,7 @@ struct Player {
     float baseRadiusAtScale1 = 1.50f; // collider for scale==1; //SAME
     float baseYawMD2 = 90.0f;
     _bullets *ball = new _bullets();
+    float animDt = 1.0f/60.0f;  // last dt passed from level
 void applyScale(float s) {
     scale  = s;
     radius = baseRadiusAtScale1 * scale;  // keep collider in sync with visual scale
@@ -83,7 +84,7 @@ void applyScale(float s) {
         glRotatef(-90.0f,1,0,0);
         glScalef(scale,scale,scale);
         // scale if needed
-        model.Draw();       // Draw animates and renders current frame; no transforms inside
+        model.Draw(animDt);       // Draw animates and renders current frame; no transforms inside
         glPopMatrix();
     }
     // Fire a throw toward a world-space point, with speed (units/sec) and optional spread

@@ -43,15 +43,15 @@ _sceneManager::~_sceneManager()
 }
 void _sceneManager::setCurrentScene(std::unique_ptr<_SceneInterface> newScene)
 {
-    std::cout << "[mgr] setCurrentScene(type=" << typeid(*newScene).name()
-              << ", suppressEnterNext_=" << (suppressEnterNext_?"T":"F") << ")\n";
+   // std::cout << "[mgr] setCurrentScene(type=" << typeid(*newScene).name()
+             // << ", suppressEnterNext_=" << (suppressEnterNext_?"T":"F") << ")\n";
     clearAllScenes();
     sceneStack_.emplace_back(std::move(newScene));
     if (!suppressEnterNext_) {
-        std::cout << "[mgr] -> calling onEnter() of " << typeid(*sceneStack_.back()).name() << "\n";
+     //   std::cout << "[mgr] -> calling onEnter() of " << typeid(*sceneStack_.back()).name() << "\n";
         sceneStack_.back()->onEnter();
     } else {
-        std::cout << "[mgr] -> SKIP onEnter()\n";
+       // std::cout << "[mgr] -> SKIP onEnter()\n";
         suppressEnterNext_ = false;
     }
 }
@@ -85,7 +85,9 @@ void _sceneManager::updateActiveScene(double dt)
 {
 
     static bool bootOnce=false;
-    if (!bootOnce) { std::cout << "[mgr] updateActiveScene: POLLING BUILD\n"; bootOnce=true; }
+    if (!bootOnce) { //std::cout << "[mgr] updateActiveScene: POLLING BUILD\n"; bootOnce=true;
+
+    }
 
     // Use the hardware transition bit to avoid missed edges
     const SHORT s = GetAsyncKeyState(VK_ESCAPE);
@@ -93,10 +95,10 @@ void _sceneManager::updateActiveScene(double dt)
 
     if (escPressedEdge) {
         if (isTopInGameMenu()) {
-            std::cout << "[mgr] ESC -> resumeFromInGameMenu()\n";
+          //  std::cout << "[mgr] ESC -> resumeFromInGameMenu()\n";
             resumeFromInGameMenu();                 // no onEnter()
         } else {
-            std::cout << "[mgr] ESC -> showInGameMenu()\n";
+           // std::cout << "[mgr] ESC -> showInGameMenu()\n";
             showInGameMenu();                       // switch to _menuScene (IGM)
         }
     }

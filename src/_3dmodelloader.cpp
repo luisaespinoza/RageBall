@@ -234,34 +234,40 @@ int _3DModelLoader::initModel(const char* filename)
     return 1;
 }
 
-void _3DModelLoader::Draw()
+void _3DModelLoader::Draw() { Draw(1.0/60.0); }
+void _3DModelLoader::Draw(double dt)
 {
-  static int n = 0; /* The current frame */
-  static float interp = 0.0;
-  static double curent_time = 0;
-  static double last_time = 0;
- // /*
-GLint boundBefore = 0;
-glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundBefore);
-//std::cout << "[MD2 pre] bound=" << boundBefore << " mine=" << md2file.tex_id << "\n";
+    static int n = 0;
+    static float interp = 0.0f;
 
-if (md2file.tex_id) { glEnable(GL_TEXTURE_2D); glBindTexture(GL_TEXTURE_2D, md2file.tex_id); }
-else { glDisable(GL_TEXTURE_2D); }
+    if (md2file.tex_id) {
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, md2file.tex_id);
+    } else {
+        glDisable(GL_TEXTURE_2D);
+    }
 
-GLint boundAfter = 0;
-glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundAfter);
-//std::cout << "[MD2 post] bound=" << boundAfter << "\n";
-// */
-  last_time = curent_time;
-  curent_time = (double)glutGet (GLUT_ELAPSED_TIME) / 1000.0;
+    float advance = animSpeed * (dt > 0 ? (float)dt : 0.0f);
+    interp += advance;
+    Animate(StartFrame, EndFrame, &n, &interp);
 
-  /* Animate model from frames 0 to num_frames-1 */
-  interp += 10 * (curent_time - last_time);
-  Animate (StartFrame, EndFrame, &n, &interp);
-
-  RenderFrameItpWithGLCmds (n, interp, &md2file);
+    RenderFrameItpWithGLCmds(n, interp, &md2file);
 }
-
+//
+//void _3DModelLoader::Draw(double dt)
+//{
+//  static int n = 0;
+//  static float interp = 0.0f;
+//
+//  if (md2file.tex_id) { glEnable(GL_TEXTURE_2D); glBindTexture(GL_TEXTURE_2D, md2file.tex_id); }
+//  else { glDisable(GL_TEXTURE_2D); }
+//
+//  float advance = animSpeed * (dt > 0 ? (float)dt : 0.0f);
+//  interp += advance;
+//  Animate(StartFrame, EndFrame, &n, &interp);
+//
+//  RenderFrameItpWithGLCmds(n, interp, &md2file);
+//}
 void _3DModelLoader::Actions()
 {
     switch(actionTrigger)

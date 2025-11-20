@@ -123,6 +123,8 @@ class _3DModelLoader
           int initModel(const char *filename);
           void setTexture(GLuint tex) { md2file.tex_id = tex; }//modular. Load any texture
           void Draw();
+          void Draw(double dt);
+          float animSpeed = 5.0f;  // frames per second, dt-scaled
           void FreeModel (struct md2_model_t *mdl);
           void Actions();
 

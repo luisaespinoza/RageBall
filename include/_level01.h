@@ -56,17 +56,19 @@ private:
     struct ThrowerAI { float cooldown = 1.6f; float t = 0.f; };
     std::vector<ThrowerAI> enemyAI_;
     std::vector<std::pair<Pose,float>> hazardsLocal_; // local-space hazards
-
+    _timer *mdTimer = new _timer();
     bool        skyReady   = false;
     std::string levelPath_;
     std::function<void(const std::string&)> requestNextLevel_;
     std::string nextLevelId_;
     bool firedNext_ = false;
     std::vector<std::unique_ptr<Enemy>> enemies;
+    std::vector<int> enemySideSign_;  // -1 for -Z half, +1 for +Z half
     _pickup* pickupItem = nullptr;  // Change to vector to add multiple later
     _collisionCheck* collisionChecker = nullptr;
     _sprite* healthRingEffect = nullptr;
     _timer healthRingEffectTimer;
+    void spawnArenaEnemies_();
 };
 
 #endif // _LEVEL01_H

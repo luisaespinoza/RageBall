@@ -20,6 +20,8 @@ public:
     float baseRadiusAtScale1 = 1.50f;   // collider for scale==1 (same)
     float baseYawMD2 = 90.0f;           // face +X in MD2, convert to your world forward like Player
 
+    float animDt = 1.0f/60.0f;  // last dt from level
+
     // call once after GL is ready (mirrors Player::init)
     bool init(const char* md2Path, const char* texturePath, _textureLoader& loader);
 
@@ -41,7 +43,10 @@ public:
     float fovDeg       = 120.f;
     float throwPeriod  = 1.4f;
     float windupTime   = 0.25f;
-
+    float preferredMin = 7.0f;
+    float preferredMax = 12.0f;
+    float strafeSpeed  = 1.2f;
+    float dangerRadius = 1.2f;
     // runtime
     State state = State::Patrol;
     float stateT = 0.f;

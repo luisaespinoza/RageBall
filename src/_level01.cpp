@@ -1,6 +1,6 @@
 #include "_level01.h"
 static GLuint gActiveObstacleTex = 0;
-
+    struct Slot { float x, z; };
 
 static void DrawTexturedCube()
 {
@@ -392,12 +392,13 @@ void _level01::loadAssets() {
     healthRingEffectTimer = _timer();
     healthRingEffectTimer.enabled = false;
     if (!player) player = new Player();
-    player->init("models/megaman/tris.md2", "models/megaman/megaman.pcx", textures);
+    player->init("models/megaman/tris.md2", "models/megaman/MegaMan.pcx", textures);
     player->applyScale(0.005f);
     player->position = {0.0f, 0.0f, -2.0f};
     player->radius   = 0.05f;
     currentHallIndex = 0;
 
+    mdTimer->reset();
     bool loaded = false;
     if (!levelPath_.empty()) {
         loaded = loadFromTextFile(levelPath_);
@@ -419,6 +420,7 @@ void _level01::loadAssets() {
         // a couple of obstacles, analogous to your demo cubes
         arena_.addObstacleLocal({{ 0.0f, 0.5f, -6.0f }, 0.f}, 0.6f, &DrawCubeInstance);
         arena_.addObstacleLocal({{ 2.0f, 0.5f,  3.5f }, 0.f}, 0.6f, &DrawCubeInstance);
+        spawnArenaEnemies_();
 
         skyReady = false; // unchanged
         return;
@@ -479,17 +481,32 @@ void _level01::reset()
     player->playerResetLife(5);
 
     if (useArena) {
-        // spawn in local space near “near wall”, centerline on X
+        // --- Player spawn on +Z half, facing -Z ---
         const float y0 = 0.5f;
-        const float insetZ = -2.0f;
-        vec3 pL { 0.0f, y0, insetZ };
-
-        // clamp once, convert to world, face forward (local yaw 0 = -Z)
+        const float zPlayer = +0.25f * arena_.d_;
+        vec3 pL { 0.0f, y0, zPlayer };
         pL = arena_.clampLocal(pL, player ? player->radius * 0.95f : 0.4f);
         player->position = arena_.toWorld(pL);
-        player->yawDeg   = /*arena yaw*/ 0.0f; // worldYawFromLocal(0) since arena yaw is 0 here
+        player->yawDeg   = worldYawFromLocal(arena_, 0.0f);   // 0° = local -Z
+
+        // --- Re-seat enemies on -Z half, facing +Z ---
+        const float zEnemy = -0.25f * arena_.d_;
+        std::vector<Slot> slots = { {-3.0f, zEnemy}, {0.0f, zEnemy}, {+3.0f, zEnemy} };
+        for (size_t i = 0; i < enemies.size() && i < slots.size(); ++i) {
+            auto& e = enemies[i];
+            vec3 eL{ slots[i].x, 0.5f, slots[i].z };
+            eL = arena_.clampLocal(eL, e->radius);
+            e->position = arena_.toWorld(eL);
+            e->yawDeg   = worldYawFromLocal(arena_, 180.0f);   // face toward +Z (player)
+            e->ball.live = false;
+            e->state = Enemy::State::Windup;
+            e->stateT = 0.0f;
+        }
         return;
     }
+
+    // ---------- existing non-arena reset logic below ----------
+
     if (halls.empty()) {
         _hallway h;
         h.attachLoader(&textures);
@@ -514,6 +531,20 @@ void _level01::reset()
 
     // Hallway is authoritative for position + ABSOLUTE orientation (face forward = local yaw 0°)
     H.placePlayerLocal(*player, pL, 0.0f);
+
+    // Reposition enemies to starting slots on the opponent side
+    const float zEnemy = -0.25f * arena_.d_;
+    std::vector<Slot> slots = { {-3.0f, zEnemy}, {0.0f, zEnemy}, {+3.0f, zEnemy} };
+
+    for (size_t i = 0; i < enemies.size() && i < slots.size(); ++i) {
+        auto& e = enemies[i];
+        vec3 pL{ slots[i].x, 0.5f, slots[i].z };
+        pL = arena_.clampLocal(pL, e->radius);
+        e->position = arena_.toWorld(pL);
+        e->yawDeg        = worldYawFromLocal(arena_, 180.0f);
+        e->ball.live = false;
+        e->state = Enemy::State::Windup; e->stateT = 0.0f;
+    }
 }
 
 void _level01::update(double dt)
@@ -554,7 +585,28 @@ void _level01::update(double dt)
             const float r  = pr + orad;
             return (sqr(dx) + sqr(dy) + sqr(dz)) <= (r*r);
         };
+        for (auto& e : enemies)
+        {
+            // Ensure dependencies are set (defensive in case of future resets)
+            e->target = player;
+            if (!e->makeTrajectory) e->makeTrajectory = [] { return Trajectory_Parabola(3.0f); };
 
+            // Brain/body update in Arena space (movement+clamp happens inside)
+            e->updateAI(dt, arena_);
+            if (!player) continue;
+
+            // Work in arena-local space so the math matches your conventions:
+            // 0° = local -Z, +X to the right. Then map back to world. :contentReference[oaicite:0]{index=0}
+            vec3 eL = arena_.toLocal(e->position);
+            vec3 pL = arena_.toLocal(player->position);
+            vec3 dL{ pL.x - eL.x, 0.0f, pL.z - eL.z };
+
+            const float L2 = dL.x*dL.x + dL.z*dL.z;
+            if (L2 > 1e-6f) {
+                const float yawLocalDeg = std::atan2(dL.x, -dL.z) * 180.0f / PI; // 0° = local -Z
+                e->yawDeg = worldYawFromLocal(arena_, yawLocalDeg);              // local→world yaw :contentReference[oaicite:1]{index=1}
+            }
+        }
         if (player->hurtCooldown > 0.0f)
             player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
 
@@ -575,6 +627,81 @@ void _level01::update(double dt)
             }
         }
 
+        // ===================== ENEMY MOVEMENT (local space, lock to -Z half) =====================
+        auto clampToEnemyHalfLocal = [&](vec3 pL, float rad){
+            pL = arena_.clampLocal(pL, rad);
+            if (pL.z > -0.10f) pL.z = -0.10f; // never cross midline (z=0)
+            return pL;
+        };
+
+        for (size_t i = 0; i < enemies.size(); ++i) {
+            auto& e = enemies[i];
+            if (!e) continue;
+            float dt = (float)dt*10.0;
+            // Time accumulator for simple oscillation; reuse stateT safely
+            e->stateT += dt;
+
+            // Local positions
+            vec3 eL = arena_.toLocal(e->position);
+            vec3 pL = arena_.toLocal(player->position);
+
+            // Direction to player (local XZ)
+            vec3 toP{ pL.x - eL.x, 0.0f, pL.z - eL.z };
+            float L = std::sqrt(toP.x*toP.x + toP.z*toP.z);
+            if (L > 1e-6f) { toP.x /= L; toP.z /= L; } else { toP = {0,0,-1}; }
+
+            // Tangent strafe (left/right) and spacing
+            vec3 tanL{ toP.z, 0.0f, -toP.x };
+            const float preferredMin = 7.0f, preferredMax = 12.0f;
+            float radial = 0.0f;
+            if (L < preferredMin)      radial = +0.4f;  // back away
+            else if (L > preferredMax) radial = -0.4f;  // step forward (midline clamp will stop it)
+
+            // Slower oscillation to reduce visual animation pace
+            float s = std::sin(1.2f * e->stateT + float(i) * 1.1f);
+            const float strafeSpeed = 0.5f;
+
+            vec3 vL{
+                (tanL.x * s * strafeSpeed) * (float)dt * e->speed,
+                 0.0f,
+                ((tanL.z * s * strafeSpeed) + radial) * (float)dt * e->speed
+            };
+
+            // Apply in LOCAL, clamp to half, then convert to world
+            vec3 eL_new = { eL.x + vL.x, eL.y + vL.y, eL.z + vL.z };
+            eL_new = clampToEnemyHalfLocal(eL_new, e->radius);
+            vec3 w0 = arena_.toWorld(eL);
+            vec3 w1 = arena_.toWorld(eL_new);
+            vec3 vW{ w1.x - w0.x, 0.0f, w1.z - w0.z };
+
+            e->position = arena_.toWorld(eL_new);
+
+            // Face the player (local yaw → world yaw)
+            vec3 dL{ pL.x - eL_new.x, 0.0f, pL.z - eL_new.z };
+            if (dL.x*dL.x + dL.z*dL.z > 1e-6f) {
+                float yawLocalDeg = std::atan2(dL.x, -dL.z) * 180.0f / PI;
+                e->yawDeg = worldYawFromLocal(arena_, yawLocalDeg);
+            }
+
+            // Animation hint from motion (world delta)
+            e->setAnimForVelocity(vW);
+        }
+        // ===================== /ENEMY MOVEMENT =====================
+// --- Player bullet → Enemy collision (optional knockout/stun) ---
+        if (player->ball->live) {
+            for (auto& e : enemies) {
+                if (collisionChecker->isSphereCol(
+                        player->ball->pos, e->position,
+                        player->ball->radius, e->radius, 0.0f)) {
+                    // Simple stun/respawn: knock one life, reset enemy, or mark stunned
+                    e->state = Enemy::State::Stunned;
+                    e->stateT = 0.0f;
+                    player->ball->live = false;
+                    break;
+                }
+            }
+        }
+
         if (collisionChecker->isSphereCol(pickupItem->pos,player->position,pickupItem->pSize.x,player->radius,0.0f) && !pickupItem->isCollected) {
             pickupItem->applyEffect(player);
             healthRingEffectTimer.enabled = true;
@@ -584,101 +711,111 @@ void _level01::update(double dt)
         }
 
         // --- Facing from local motion → world yaw via arena orientation ---
-        if (vL.x*vL.x + vL.z*vL.z > 1e-6f) {
-            const float yawLocalDeg = atan2f(/*x=*/vL.x, /*-z*/-vL.z) * 180.0f / PI;
-            // arena world yaw = arena_.pose_.yawDeg + local yaw
-            player->yawDeg = arena_.pose_.yawDeg + yawLocalDeg;
+// Face in the direction of LOCAL motion (0° = local -Z)
+        const float v2 = vL.x*vL.x + vL.z*vL.z;
+        if (v2 > 1e-6f) {
+            float x = vL.x, z = vL.z;
+
+            // If motion is strafe-dominant, flip X so A/D face the way they move.
+            // (Keeps W/S unchanged.)
+            if (std::fabs(z) <= std::fabs(x)) {
+                x = -x;  // <-- critical line: invert lateral sign ONLY for strafes
+            }
+
+            const float yawLocalDeg = std::atan2(x, -z) * 180.0f / PI; // 0° points along local -Z
+            player->yawDeg = worldYawFromLocal(arena_, yawLocalDeg);
         }
+
 
         player->setAnimForVelocity(vW);
         player->updateBall(dt);
         return;
     }
 
-    // ---- original hallway path (kept behind the flag) ----
- if (!player || halls.empty()) return;
+        // ---- original hallway path (kept behind the flag) ----
+     if (!player || halls.empty()) return;
 
-    fwd = (w ? 1.f : 0.f) - (s ? 1.f : 0.f);   // forward = local -Z
-    str = (d ? 1.f : 0.f) - (a ? 1.f : 0.f);   // strafe  = local +X
-    mag = sqrtf(fwd*fwd + str*str);
-    if (mag > 1e-6f) { fwd /= mag; str /= mag; }
+        fwd = (w ? 1.f : 0.f) - (s ? 1.f : 0.f);   // forward = local -Z
+        str = (d ? 1.f : 0.f) - (a ? 1.f : 0.f);   // strafe  = local +X
+        mag = sqrtf(fwd*fwd + str*str);
+        if (mag > 1e-6f) { fwd /= mag; str /= mag; }
 
-    // --- 1) Decide which hallway is active BEFORE computing velocity ---
-    _hallway& Hcur = halls[currentHallIndex];
-    vec3 pLcur = Hcur.toLocal(player->position);
-     float edge = 0.05f;
+        // --- 1) Decide which hallway is active BEFORE computing velocity ---
+        _hallway& Hcur = halls[currentHallIndex];
+        vec3 pLcur = Hcur.toLocal(player->position);
+         float edge = 0.05f;
 
-    // Advance/backtrack hall based on where we are in the *current* hall
-    if (fwd > 0.0f && pLcur.z < -Hcur.length() + edge && currentHallIndex + 1 < (int)halls.size()) {
-        ++currentHallIndex;
-    } else if (fwd < 0.0f && pLcur.z > -edge && currentHallIndex > 0) {
-        --currentHallIndex;
-    }
-
-    // H is the authoritative hallway for THIS frame
-    _hallway& H = halls[currentHallIndex];
-
-    // IMPORTANT: recompute player local position in the *new* hallway
-    vec3 pL = H.toLocal(player->position);
-
-    // --- 2) Compute LOCAL velocity then convert to WORLD as a delta of transformed points ---
-    const float step = player->speed * (float)dt;
-
-    // local forward is -Z, strafe is +X
-    vec3 vL = { str * step, 0.0f, -fwd * step };
-
-    // Convert local delta to world delta at the player's local position
-    vec3 w0 = H.toWorld(pL);
-    vec3 w1 = H.toWorld({ pL.x + vL.x, pL.y + vL.y, pL.z + vL.z });
-    vec3 vW = { w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
-
-
-    // --- 3) Move & clamp inside THIS hallway ---
-    player->moveAndClamp(dt, vW, H);
-
-
-        // ------------- Collision with obstacles -------------
-    auto sqr = [](float v){ return v*v; };
-    auto hitSphere = [&](float px, float py, float pz, float pr,
-                         float ox, float oy, float oz, float orad) {
-        const float dx = px - ox, dy = py - oy, dz = pz - oz;
-        const float r  = pr + orad;
-        return (sqr(dx) + sqr(dy) + sqr(dz)) <= (r*r);
-    };
-
-    // tick down hurt cooldown
-if (player->hurtCooldown > 0.0f)
-    player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
-
-    // Only check for damage if not invincible
-    if (player->hurtCooldown <= 0.f) {
-        bool tookHit = false;
-
-        // Iterate all halls and their obstacles in the current level
-        for (const auto& hall : halls) {
-            hall.forEachObstacleWorld([&](float ox, float oy, float oz, float radius){
-                if (!tookHit && hitSphere(player->position.x, player->position.y, player->position.z, player->radius,
-                                          ox, oy, oz, radius)) {
-                    tookHit = true;
-                }
-            });
-            if (tookHit) break;
+        // Advance/backtrack hall based on where we are in the *current* hall
+        if (fwd > 0.0f && pLcur.z < -Hcur.length() + edge && currentHallIndex + 1 < (int)halls.size()) {
+            ++currentHallIndex;
+        } else if (fwd < 0.0f && pLcur.z > -edge && currentHallIndex > 0) {
+            --currentHallIndex;
         }
 
-        if (tookHit) {
-            player->life -= 1;
-            player->hurtCooldown = 1.0f;   // 1 second invulnerability to avoid rapid multi-hit
+        // H is the authoritative hallway for THIS frame
+        _hallway& H = halls[currentHallIndex];
 
-            // optional: print or flash UI
-            std::cout << "[player] hit! life=" << player->life << "\n";
+        // IMPORTANT: recompute player local position in the *new* hallway
+        vec3 pL = H.toLocal(player->position);
 
-            if (player->life <= 0) {
-                // ---- RESET THE LEVEL ----
-               this->reset();            // see #4 below
-                return;                   // bail out of this frame's update
+        // --- 2) Compute LOCAL velocity then convert to WORLD as a delta of transformed points ---
+        const float step = player->speed * (float)dt;
+
+        // local forward is -Z, strafe is +X
+        vec3 vL = { str * step, 0.0f, -fwd * step };
+
+        // Convert local delta to world delta at the player's local position
+        vec3 w0 = H.toWorld(pL);
+        vec3 w1 = H.toWorld({ pL.x + vL.x, pL.y + vL.y, pL.z + vL.z });
+        vec3 vW = { w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
+
+
+        // --- 3) Move & clamp inside THIS hallway ---
+        player->moveAndClamp(dt, vW, H);
+
+
+            // ------------- Collision with obstacles -------------
+        auto sqr = [](float v){ return v*v; };
+        auto hitSphere = [&](float px, float py, float pz, float pr,
+                             float ox, float oy, float oz, float orad) {
+            const float dx = px - ox, dy = py - oy, dz = pz - oz;
+            const float r  = pr + orad;
+            return (sqr(dx) + sqr(dy) + sqr(dz)) <= (r*r);
+        };
+
+        // tick down hurt cooldown
+    if (player->hurtCooldown > 0.0f)
+        player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
+
+        // Only check for damage if not invincible
+        if (player->hurtCooldown <= 0.f) {
+            bool tookHit = false;
+
+            // Iterate all halls and their obstacles in the current level
+            for (const auto& hall : halls) {
+                hall.forEachObstacleWorld([&](float ox, float oy, float oz, float radius){
+                    if (!tookHit && hitSphere(player->position.x, player->position.y, player->position.z, player->radius,
+                                              ox, oy, oz, radius)) {
+                        tookHit = true;
+                    }
+                });
+                if (tookHit) break;
+            }
+
+            if (tookHit) {
+                player->life -= 1;
+                player->hurtCooldown = 1.0f;   // 1 second invulnerability to avoid rapid multi-hit
+
+                // optional: print or flash UI
+                std::cout << "[player] hit! life=" << player->life << "\n";
+
+                if (player->life <= 0) {
+                    // ---- RESET THE LEVEL ----
+                   this->reset();            // see #4 below
+                    return;                   // bail out of this frame's update
+                }
             }
         }
-    }
 // --- 4) Absolute facing: steer toward movement direction (world space) ---
     float faceYawWorld = player->yawDeg;
     const float mv2 = vL.x*vL.x + vL.z*vL.z;
@@ -745,15 +882,19 @@ void _level01::render(const RenderFlags& flags)
         glPushMatrix();
         arena_.render();
         glPopMatrix();
+        for (auto& e : enemies) {
 
+                    e->render();           // draws enemy model + its projectile
+
+        }
         player->render();
         player->ball->drawBullet();
         //pickupItem->pos = player->position; // for testing
         pickupItem->drawSprite();
         if (healthRingEffectTimer.getTicks() < 2000 && healthRingEffectTimer.enabled) { // Effect lasts for two seconds, long but good for testing
-            healthRingEffect->pSize.x += 0.006f; // Animation scale effect
-            healthRingEffect->pSize.y += 0.006f; 
-            healthRingEffect->pSize.z += 0.006f; 
+            healthRingEffect->pSize.x += 0.002f; // Animation scale effect
+            healthRingEffect->pSize.y += 0.002f;
+            healthRingEffect->pSize.z += 0.002f;
             healthRingEffect->drawSprite();
         }
         glDisable(GL_LIGHTING);
@@ -994,4 +1135,36 @@ void _level01::throwBallAtWorld(double wx, double wy, double wz) {
 
     // scale the visual size of the bullet to the character scale
     player->ball->radius = std::max(0.02f, 0.40f * r);
+}
+void _level01::spawnArenaEnemies_() {
+    enemies.clear();
+
+    // Simple 3-enemy formation on the opponent side (z < 0)
+   // struct Slot { float x, z; };
+    const float zEnemy = -0.25f * arena_.d_;            // midpoint of the positive-Z half
+    std::vector<Slot> slots = { {-3.0f, zEnemy}, {0.0f, zEnemy}, {+3.0f, zEnemy} };
+
+    for (const auto& s : slots) {
+        auto e = std::make_unique<Enemy>();
+        if (!e->init("models/megaman/tris.md2", "", textures)) continue;  // allow untextured
+        e->applyScale(0.005f);
+
+        vec3 pL{ s.x, 0.5f, s.z };
+        pL = arena_.clampLocal(pL, e->radius);
+        e->position = arena_.toWorld(pL);
+        e->yawDeg        = worldYawFromLocal(arena_, 180.0f);     // face toward -Z (player)
+
+        e->target = player;
+        e->makeTrajectory = [] { return Trajectory_Parabola(3.0f); };
+        e->throwPeriod = 1.6f;
+        e->windupTime  = 0.25f;
+
+        e->preferredMin = 7.0f;
+        e->preferredMax = 12.0f;
+        e->strafeSpeed  = 1.2f;
+        e->dangerRadius = 1.2f;
+
+        enemies.emplace_back(std::move(e));
+    }
+    std::cout << "[arena] spawned enemies: " << enemies.size() << "\n";
 }

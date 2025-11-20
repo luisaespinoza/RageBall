@@ -24,7 +24,8 @@ bool Enemy::init(const char* md2Path, const char* texturePath, _textureLoader& l
 
     // sync collider to current scale (same convention as Player)
     radius = baseRadiusAtScale1 * scale;                             //
-    return tid != 0;
+//    return tid != 0;
+    return ok;
 }
 
 void Enemy::setAnimForVelocity(const vec3& vW) {
@@ -40,7 +41,7 @@ void Enemy::render() {
     glRotatef(baseYawMD2 + yawDeg, 0, 1, 0);                         // same as Player
     glRotatef(-90.0f, 1, 0, 0);                                      // MD2 -> your up-axis
     glScalef(scale, scale, scale);                                   // visual scale
-    model.Draw();                                                    // draw current frame (and animate)
+    model.Draw(animDt);                                                    // draw current frame (and animate)
     glPopMatrix();
 
     // draw projectile too (unchanged)

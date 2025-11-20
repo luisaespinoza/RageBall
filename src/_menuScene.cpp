@@ -46,7 +46,7 @@ void _menuScene::onEnter() {
     menuBullet.speed=pauseBullet.speed = 36.0f;
     menuBullet.radius = 1.0f;
 
-        std::cout << "[menu] onEnter mode=" << (mode==Mode::InGameMenu?"IGM":"MAIN") << "\n";
+  //      std::cout << "[menu] onEnter mode=" << (mode==Mode::InGameMenu?"IGM":"MAIN") << "\n";
     menuBackground->skyBoxInit();
     menuBackground->tex[0] = menuBackground->textures->loadTexture("images/front.jpg");//front/posz
 
@@ -72,7 +72,7 @@ void _menuScene::update(double dt) {
 }
 
 void _menuScene::render() {
-    std::cout << "[menu] render mode=" << (mode==Mode::InGameMenu?"IGM":"MAIN") << "\n";
+   // std::cout << "[menu] render mode=" << (mode==Mode::InGameMenu?"IGM":"MAIN") << "\n";
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     menuRender();
 }
@@ -196,7 +196,7 @@ void _menuScene::menuUpdate(double dt) {
 
 // -------- render --------
 void _menuScene::menuRender() {
-    cout<<"menu rendered"<<endl;
+    //cout<<"menu rendered"<<endl;
     MenuContext ctx = activeMenuContext();
     if (!ctx.camera || !ctx.blocks || !ctx.bullet) return;
 
