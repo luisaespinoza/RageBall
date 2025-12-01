@@ -11,10 +11,13 @@ _sceneManager::_sceneManager()
     });
 
     // level02 -> level03
+    // LevelRegistry::instance().registerLevel("level02", [](){
+    //     auto L = std::make_unique<_level01>("levels/level02.txt");
+    //     L->setNextLevelId("level03");
+    //     return L;
+    // });
     LevelRegistry::instance().registerLevel("level02", [](){
-        auto L = std::make_unique<_level01>("levels/level02.txt");
-        L->setNextLevelId("level03");
-        return L;
+        return std::make_unique<_level02>();
     });
 
     // level03 -> back to main menu
@@ -33,7 +36,8 @@ this->setCurrentScene(std::make_unique<_menuScene>(
         ));
     },
     /* onQuit  */ [this]{ PostQuitMessage(0); },
-    "level01"
+    //"level01"
+    "level02"   // TEMP FOR TESTING
 ));
 }
 
@@ -233,7 +237,7 @@ void LoadLevelScene::render() {
         level->render(flags);
     }
 }
-int LoadLevelScene::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+int LoadLevelScene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN: {
@@ -277,6 +281,9 @@ int LoadLevelScene::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     { static_cast<float>(fx - nx), static_cast<float>(fy - ny), static_cast<float>(fz - nz) }
                 );
             }
+        }
+        case WM_MOUSEMOVE: {
+            if (level) return level->winMsg(hWnd, uMsg, wParam, lParam);
         }
         default:
             return 0;

@@ -22,7 +22,7 @@ struct Player : public Character {
     float scale = 0.20f;              // world-units per MD2 unit //set once do not touch
     float baseRadiusAtScale1 = 1.50f; // collider for scale==1; //SAME
     float baseYawMD2 = 90.0f;
-    _bullets *ball = new _bullets();
+    _bullets *ball = nullptr;
     float animDt = 1.0f/60.0f;  // last dt passed from level
 void applyScale(float s) {
     scale  = s;
@@ -30,7 +30,7 @@ void applyScale(float s) {
 }
     int life = 5; //abstraction of our collisions. You only get 5 collisions per level
     float hurtCooldown = 0.3f;           // seconds of invulnerability after a hit
-    PlayerInput *playerInput= new PlayerInput();
+    PlayerInput *playerInput= nullptr;
     inline void playerResetLife( int newLife=5) {
         life = newLife;
         hurtCooldown = 0.f;
@@ -116,9 +116,15 @@ void applyScale(float s) {
     inline void renderBall() {
         ball->drawBullet();  // draws a GLUT sphere when live
     }
+    Player() {
+        ball = new _bullets();
+        playerInput = new PlayerInput();
+    }
     ~Player() {
-        delete ball; ball = nullptr;
-        delete playerInput; playerInput = nullptr;
+        delete ball; 
+        ball = nullptr;
+        delete playerInput; 
+        playerInput = nullptr;
     }
 };
 #endif // _PLAYER_H

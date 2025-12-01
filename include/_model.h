@@ -2,46 +2,54 @@
 #define _MODEL_H
 
 #include<_common.h>
-
+#include<_textureloader.h>
+#include<_objloader.h>
+#include<_boundingBox.h>
 class _model
 {
     public:
         _model();
+        // Copy contructor for preloading models for multiple instances
+        _model(const _model& other);
         virtual ~_model();
 
-        double rotateX;
-        double rotateY;
-        double rotateZ;
+        _textureLoader *texLoader = new _textureLoader();
+        _objLoader *model3DLoader = new _objLoader();
 
-        double posX;
-        double posY;
-        double posZ;
+        vec3f rotation;
+        vec3f position;
+        vec3f scale;
+        col3f color;
 
-        double scale;
+        // for physics
+        vec3 velocity;
+        vec3 acceleration;
 
-        vec3 p;
+        vector<_boundingBox> boundingBoxes; // Models can have multiple bounding boxes for collision detection
 
+        // Model enabled flag -- disabled by default but init functions set to true. Must be manually set back once changed.
+        bool enabled = false;
+
+        enum modelType {TEAPOT, TORUS, CUBE, SPHERE, CUSTOM};
+        modelType currentModel;
+
+        // Initialize model with texture + model
+        void initModel(char* texPath, char* modelPath, modelType currentModel);
+        // Initialize model with texture only (primitive model ONLY)
+        void initModel(char* texPath, modelType currentModel);
+        // Draw the model
         void drawModel();
- /*
+        // Display bounding boxes for debugging
+        void displayBoundingBoxes();
+        // Add a bounding box to the model
+        void addBoundingBox(vec3f dim, vec3f pos, vec3f scale);
+        // Add a bounding box to model with position/scale tied to model's
+        void addBoundingBox(vec3f dim);
+        // Simple AABB (T/F) collision check with another bounding box for ALL in model
+        bool isCollidingWith(const _boundingBox& otherBox);
+        // Penetration Depth collision check with another bounding box for ALL in model
+        vector<_boundingBox::collisionType> checkCollisionWith(const _boundingBox& otherBox);
 
- for testing. Not a final production solution
-
- */
-// Reusable teapot instance (no per-frame realloc)
-static _model& TeapotModel() {
-    static _model m;
-    // Keep the model at origin; hallway handles placement
-    m.posX = 0.f; m.posY = 0.f; m.posZ = 0.f;
-    m.rotateX = m.rotateY = m.rotateZ = 0.f;
-    return m;
-}
-
-// Obstacle draw function compatible with your addObstacleLocal(..., drawFn)
-void DrawTeapot() {
-    auto& m = TeapotModel();
-    m.scale = 0.5f;            // pick a size that fits the hallway
-    m.drawModel();             // calls glutSolidTeapot(...) internally
-}
     protected:
 
     private:

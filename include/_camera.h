@@ -30,6 +30,12 @@ class _camera
 
         void setUpCamera();  // set the cam using gluLookat
 
+        // FPS CAMEAR FUNCTIONS
+        void updateFPSCamera();           // Recalculate 'des' from 'eye' + rotation
+        void moveFPSForward(float amount);  // Move in look direction
+        void moveFPSStrafe(float amount);   // Move perpendicular to look direction
+        void moveFPSUp(float amount);       // Move in world up/down
+        
     protected:
 
     private:

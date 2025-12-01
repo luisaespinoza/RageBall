@@ -13,11 +13,18 @@
 #include <iostream>
 #include <windows.h>	// Header File For Windows
 #include <gl/gl.h>
+#include <_common.h>
 
 #include <_sceneManager.h>
 #include <_menuScene.h>
 #include <_scene.h>
 #include <_level01.h>
+
+PFNGLGENBUFFERSPROC glGenBuffers = nullptr;
+PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
+PFNGLBUFFERDATAPROC glBufferData = nullptr;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
+
 using namespace std;
 ////////_Scene *myScene = new _Scene(); //Create scene class instance
 //_Scene *myScene - new _Scene();//
@@ -225,6 +232,13 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		MessageBox(NULL,"Can't Activate The GL Rendering Context.","ERROR",MB_OK|MB_ICONEXCLAMATION);
 		return FALSE;						                // Return FALSE
 	}
+
+
+	// Load OpenGL functions
+	glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+    glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+    glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+    glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
 
 	ShowWindow(hWnd,SW_SHOW);					            // Show The Window
 	SetForegroundWindow(hWnd);					            // Slightly Higher Priority
