@@ -55,6 +55,7 @@ private:
     _timerPlusPlus* physicsTimer = nullptr;
     _timerPlusPlus* keyTimer = nullptr;
     _timerPlusPlus* ballTimer = nullptr;
+    _timerPlusPlus* ballDeleteTimer = nullptr; // Timer for deleting ballz
     // balls!
     vector<_model*> balls;
     _model* ballPrototype = nullptr;
@@ -64,6 +65,8 @@ private:
     vec3f playerVelocity = {0.0f, 0.0f, 0.0f};
 
     _textureLoader* textureLoader = nullptr;
+    int modelIdList = 0;
+    int ballDeleteTime = 2500; // milliseconds before a ball is deleted
     // idk what any of this is
     std::string nextLevelId_;
     std::string levelPath_;

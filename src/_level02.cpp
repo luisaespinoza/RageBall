@@ -11,24 +11,11 @@ _level02::_level02() {
     noclipCamera = new _camera();
     playerHitBox = new _boundingBox();
     ballTimer = new _timerPlusPlus();
+    ballDeleteTimer = new _timerPlusPlus();
 }
 
 _level02::~_level02() {
-    for (int i = 0; i < balls.size(); i++) {
-        delete balls[i];
-    }
-    balls.clear();
-    delete ballPrototype;
-    delete characterCamera;
-    delete noclipCamera;
-    delete roomModel;
-    delete player;
-    delete playerHitBox;
-    delete debugTimer;
-    delete physicsTimer;
-    delete keyTimer;
-    delete ballTimer;
-    delete textureLoader;
+    unloadAssets();
 }
 
 void _level02::loadAssets() {
@@ -67,7 +54,22 @@ void _level02::loadAssets() {
 
 void _level02::unloadAssets()
 {
-
+    for (int i = 0; i < balls.size(); i++) {
+        delete balls[i];
+    }
+    balls.clear();
+    delete ballPrototype;
+    delete characterCamera;
+    delete noclipCamera;
+    delete roomModel;
+    delete player;
+    delete playerHitBox;
+    delete debugTimer;
+    delete physicsTimer;
+    delete keyTimer;
+    delete ballTimer;
+    delete ballDeleteTimer;
+    delete textureLoader;
 }
 
 void _level02::handleKey(UINT uMsg, WPARAM wParam) {
@@ -144,6 +146,8 @@ void _level02::debugPrint() {
 
 void _level02::update(double dt) {
     // INPUT HANDLING //
+    float physicsDt = physicsTimer->getTicks()/1000.0f; // convert ms to s
+
     const bool w = (GetAsyncKeyState(KEY_W) & 0x8000) != 0;
     const bool s = (GetAsyncKeyState(KEY_S) & 0x8000) != 0;
     const bool a = (GetAsyncKeyState(KEY_A) & 0x8000) != 0;
@@ -153,7 +157,7 @@ void _level02::update(double dt) {
 
     float gravity = -9.81f; // gravity acceleration
     float moveSpeedCamera = 0.1f;
-    float playerMoveSpeed = 0.01f;
+    float playerMoveSpeed = 4.0f;
     float ballSpeed = 0.5f;
     bool jumpImpulse = false;
     // COLLISION CHECKING //
@@ -168,18 +172,18 @@ void _level02::update(double dt) {
         if (shift) { noclipCamera->moveFPSUp(-moveSpeedCamera); }
     } else {
         if (w && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_Z) == collisions.end()) { 
-            player->position.z += -playerMoveSpeed;
+            player->position.z += -playerMoveSpeed * physicsDt;
         }
         if (s && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_Z) == collisions.end()) { 
-            player->position.z += playerMoveSpeed;
+            player->position.z += playerMoveSpeed * physicsDt;
         }
         if (a && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_X) == collisions.end()) { 
-            player->position.x += -playerMoveSpeed;
+            player->position.x += -playerMoveSpeed * physicsDt;
         }
         if (d && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_X) == collisions.end()) { 
-            player->position.x += playerMoveSpeed;
+            player->position.x += playerMoveSpeed * physicsDt;
         }
-        if (space && std::find(collisions.begin(), collisions.end(), _boundingBox::NONE) == collisions.end()) {
+        if (space && std::count(collisions.begin(), collisions.end(), _boundingBox::POS_Y) > 0) {
             playerVelocity.y = 10.0f; // jump impulse
             jumpImpulse = true;
         }
@@ -203,7 +207,6 @@ void _level02::update(double dt) {
     characterCamera->des = player->position;
     characterCamera->eye = {player->position.x, player->position.y + 1.25f, player->position.z + 3.0f};
     // PHYSICS UPDATE //
-    float physicsDt = physicsTimer->getTicks()/1000.0f; // convert ms to s
     // Update velocity by acceleration
     playerVelocity.x += playerAccel.x * physicsDt; 
     playerVelocity.y += playerAccel.y * physicsDt; 
@@ -259,7 +262,11 @@ void _level02::update(double dt) {
             delete balls[i];
             balls.erase(balls.begin() + i);
             i--; // adjust index after removal
-        }
+        } else if (ballDeleteTimer->getTicks() - balls[i]->spawnTime >= ballDeleteTime) {
+            delete balls[i];
+            balls.erase(balls.begin() + i);
+            i--; // adjust index after removal          
+        }    
     }
     physicsTimer->reset();
     // DEBUG PRINTING //
@@ -323,6 +330,8 @@ void _level02::debugPrintCollisionInfo(const _boundingBox::collisionType& collis
 
 void _level02::createBall() {
     _model* newBall = new _model(*ballPrototype); // copy prototype
+    newBall->modelId = modelIdList++;
+    newBall->spawnTime = ballDeleteTimer->getTicks();
     newBall->position = {player->position.x, player->position.y + 1.0f, player->position.z};
     newBall->velocity = {0.0f, 1.0f, -9.0f}; // initial throw velocity
     newBall->boundingBoxes[0].position = {newBall->position.x, newBall->position.y, newBall->position.z};
