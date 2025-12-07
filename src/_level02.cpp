@@ -22,7 +22,7 @@ void _level02::loadAssets() {
     // PLAYER INIT //
     //player->init("models/megaman/tris.md2", "models/megaman/MegaMan.pcx", *textureLoader);
     //player->applyScale(0.005f);
-    player->scale = {0.08f, 0.08f, 0.08f};
+    player->vec_scale = {0.08f, 0.08f, 0.08f};
     player->initPlayer();
     player->position = {0.0f, 1.0f, -2.0f};
     //player->radius   = 0.05f;

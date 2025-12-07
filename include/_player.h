@@ -23,11 +23,11 @@ struct Player : public Character {
     _3DModelLoader model;
     vec3 position{0,0,0};
     vec3f rotation = {0.0f,0.0f,0.0f};
-    vec3f scale = {1.0f,1.0f,1.0f};
+    vec3f vec_scale = {1.0f,1.0f,1.0f};
     float yawDeg = 0.f;
     float speed  = 6.0f;
     float radius = 0.5f;
-    //float scale = 0.20f;              // world-units per MD2 unit //set once do not touch
+    float scale = 0.20f;              // world-units per MD2 unit //set once do not touch
     float baseRadiusAtScale1 = 1.50f; // collider for scale==1; //SAME
     float baseYawMD2 = 90.0f;
     _bullets *ball = nullptr;
@@ -55,10 +55,10 @@ struct Player : public Character {
         // main model
         playerModel->initModel("images/chud.jpg", "models/player.obj", _model::CUSTOM);
         playerModel->enabled = true;
-        playerModel->scale = scale;
+        playerModel->scale = vec_scale;
         // ball
         ballModel->initModel("images/dodgeball.jpg", "models/ball_idle.obj", _model::CUSTOM);
-        ballModel->scale = scale;
+        ballModel->scale = vec_scale;
         // collision
         //collisionBox->initBoundingBox({0.7f, 2.0f, 0.7f}, (position+collisionBoxOffset), size);
         // animations
@@ -93,8 +93,8 @@ struct Player : public Character {
     }
     ////////////////////////////////
 void applyScale(float s) {
-    //scale  = s;
-    //radius = baseRadiusAtScale1 * scale;  // keep collider in sync with visual scale
+    scale  = s;
+    radius = baseRadiusAtScale1 * scale;  // keep collider in sync with visual scale
 }
     int life = 5; //abstraction of our collisions. You only get 5 collisions per level
     float hurtCooldown = 0.3f;           // seconds of invulnerability after a hit
@@ -150,7 +150,7 @@ void applyScale(float s) {
         glTranslatef(position.x, position.y, position.z);
         glRotatef(baseYawMD2 + yawDeg, 0,1,0);
         glRotatef(-90.0f,1,0,0);
-        //glScalef(scale,scale,scale);
+        glScalef(scale,scale,scale);
         // scale if needed
         model.Draw(animDt);       // Draw animates and renders current frame; no transforms inside
         glPopMatrix();
