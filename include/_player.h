@@ -7,6 +7,12 @@
 #include<_spatialNav.h>
 #include<_character.h>
 
+#include<_animation.h>
+#include<_timerPlusPlus.h>
+#include<_model.h>
+
+enum PlayerAnimation {IDLE, WALK};
+
 struct PlayerInput {
     bool moveFwd  = false;
     bool moveBack = false;
@@ -16,17 +22,79 @@ struct PlayerInput {
 struct Player : public Character {
     _3DModelLoader model;
     vec3 position{0,0,0};
+    vec3f rotation = {0.0f,0.0f,0.0f};
+    vec3f scale = {1.0f,1.0f,1.0f};
     float yawDeg = 0.f;
     float speed  = 6.0f;
     float radius = 0.5f;
-    float scale = 0.20f;              // world-units per MD2 unit //set once do not touch
+    //float scale = 0.20f;              // world-units per MD2 unit //set once do not touch
     float baseRadiusAtScale1 = 1.50f; // collider for scale==1; //SAME
     float baseYawMD2 = 90.0f;
     _bullets *ball = nullptr;
     float animDt = 1.0f/60.0f;  // last dt passed from level
+    // JANUS - OBJ PLAYER SECTION //
+    PlayerAnimation currentAnimation;
+    _model* playerModel = nullptr;
+    _model* ballModel = nullptr;
+    _animation* walk_body_animation = nullptr;
+    _animation* walk_arm_animation = nullptr;
+    _animation* walk_ball_animation = nullptr;
+    _timerPlusPlus* animationTimer = nullptr;
+    bool hasBall = true;
+    void initPlayer()
+    {
+        // Initialize player properties
+        //hasBall = false;
+        currentAnimation = IDLE;
+        //health = 100;
+        //collisionBoxOffset = {0.0f, 0.8f, 0.0f};
+        //rotation = {0.0f, 0.0f, 0.0f};
+        //size = {1.0f, 1.0f, 1.0f};
+        // timers
+        animationTimer->reset();
+        // main model
+        playerModel->initModel("images/chud.jpg", "models/player.obj", _model::CUSTOM);
+        playerModel->enabled = true;
+        playerModel->scale = scale;
+        // ball
+        ballModel->initModel("images/dodgeball.jpg", "models/ball_idle.obj", _model::CUSTOM);
+        ballModel->scale = scale;
+        // collision
+        //collisionBox->initBoundingBox({0.7f, 2.0f, 0.7f}, (position+collisionBoxOffset), size);
+        // animations
+        walk_body_animation->initAnimation("images/chud.jpg", "models/animations/Walk_Forward/Body/Walk_Forward", 24, 28, 12, playerModel->scale);
+        walk_arm_animation->initAnimation("images/chud.jpg", "models/animations/Walk_Forward/RightArm/Walk_Forward", 24, 28, 12, playerModel->scale);
+        walk_ball_animation->initAnimation("images/dodgeball.jpg", "models/animations/Walk_Forward/Ball/Walk_Forward", 24, 28, 12, playerModel->scale);
+    }
+    void drawPlayer()
+    {
+        //collisionBox->position = (position + collisionBoxOffset);
+        switch (currentAnimation) {
+            case WALK:
+                animationTimer->reset();
+                walk_body_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                walk_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                if (hasBall) {
+                    walk_ball_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                }
+                break;
+            case IDLE:
+                playerModel->position = {position.x, position.y, position.z};
+                playerModel->rotation = rotation;
+                playerModel->drawModel();
+                if (hasBall) {
+                    ballModel->position = {position.x, position.y, position.z};
+                    ballModel->rotation = rotation;
+                    ballModel->drawModel();
+                }
+            default:
+                break;
+        }
+    }
+    ////////////////////////////////
 void applyScale(float s) {
-    scale  = s;
-    radius = baseRadiusAtScale1 * scale;  // keep collider in sync with visual scale
+    //scale  = s;
+    //radius = baseRadiusAtScale1 * scale;  // keep collider in sync with visual scale
 }
     int life = 5; //abstraction of our collisions. You only get 5 collisions per level
     float hurtCooldown = 0.3f;           // seconds of invulnerability after a hit
@@ -82,7 +150,7 @@ void applyScale(float s) {
         glTranslatef(position.x, position.y, position.z);
         glRotatef(baseYawMD2 + yawDeg, 0,1,0);
         glRotatef(-90.0f,1,0,0);
-        glScalef(scale,scale,scale);
+        //glScalef(scale,scale,scale);
         // scale if needed
         model.Draw(animDt);       // Draw animates and renders current frame; no transforms inside
         glPopMatrix();
@@ -119,12 +187,27 @@ void applyScale(float s) {
     Player() {
         ball = new _bullets();
         playerInput = new PlayerInput();
+        //collisionBox = new _boundingBox();
+        playerModel = new _model();
+        ballModel = new _model();
+        walk_body_animation = new _animation();
+        walk_arm_animation = new _animation();
+        walk_ball_animation = new _animation();
+        animationTimer = new _timerPlusPlus();
     }
     ~Player() {
         delete ball; 
         ball = nullptr;
         delete playerInput; 
         playerInput = nullptr;
+
+        //delete collisionBox;
+        delete playerModel;
+        delete ballModel;
+        delete walk_body_animation;
+        delete walk_arm_animation;
+        delete walk_ball_animation;
+        delete animationTimer;
     }
 };
 #endif // _PLAYER_H

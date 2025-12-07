@@ -39,6 +39,15 @@ struct ExpandedVertex3 {
     float tu, tv;         // texture coordinate
 };
 
+enum ObjDebugType {
+    OBJ_VERTEX,
+    OBJ_NORMAL,
+    OBJ_TEXCOORD,
+    OBJ_FACE3,
+    OBJ_FACE4,
+    OBJ_ALL
+};
+
 // Loads and renders a 3D model from an OBJ file
 class _objLoader
 {
@@ -63,19 +72,26 @@ class _objLoader
         // WARNING WILL CRASH ON LARGE FILES -- YOU HAVE BEEN WARNED. Prints all Vertices, Normals, and TexCoords to console
         bool megaDebug = false; 
 
+        // Sets up the OBJ model from file, returns true on success
         bool initObj(const char* filename);
+        // Renders the loaded OBJ model -- make sure to call initObj() -> buildBuffer() first
         void drawObj();
-
+        // Debug info to console
         void debug();
-
-        float parseEntry(char** tape);
-        void parseFace(int &x, int &y, int &z, char** tape);
-
+        // Debug specfic data to log file as OBJ_VERTEX, OBJ_NORMAL, OBJ_TEXCOORD,OBJ_FACE3, OBJ_FACE4, OBJ_ALL
+        void logDebug(ObjDebugType type);
+        // Builds the VBO from loaded data (must be called after initObj)
         void buildBuffer();
+
+        void parseFace(int &x, int &y, int &z, char** tape);
+        float parseEntry(char** tape);
 
     protected:
 
     private:
+        
+        
+
 };
 
 #endif // _OBJLOADER_H

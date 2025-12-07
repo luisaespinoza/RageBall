@@ -82,6 +82,8 @@ private:
 
     int lastMouseX = 0;
     int lastMouseY = 0;
+    int windowWidth = 0;
+    int windowHeight = 0;
     bool firstMouse = true;
 };
 

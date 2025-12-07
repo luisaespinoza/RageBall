@@ -20,13 +20,15 @@ _level02::~_level02() {
 
 void _level02::loadAssets() {
     // PLAYER INIT //
-    player->init("models/megaman/tris.md2", "models/megaman/MegaMan.pcx", *textureLoader);
-    player->applyScale(0.005f);
-    player->position = {0.0f, 2.0f, -2.0f};
-    player->radius   = 0.05f;
+    //player->init("models/megaman/tris.md2", "models/megaman/MegaMan.pcx", *textureLoader);
+    //player->applyScale(0.005f);
+    player->scale = {0.08f, 0.08f, 0.08f};
+    player->initPlayer();
+    player->position = {0.0f, 1.0f, -2.0f};
+    //player->radius   = 0.05f;
     playerHitBox->initBoundingBox({0.25f, 0.4f, 0.25f}, {player->position.x, player->position.y + 0.9f, player->position.z}, {1.0f, 1.0f, 1.0f});
     // ROOM MODEL INIT //
-    roomModel->initModel("images/back.jpg","models/MenuBox.obj", _model::CUSTOM);
+    roomModel->initModel("images/back.jpg","models/arena.obj", _model::CUSTOM);
     roomModel->position = {0.0f, -1.0f, 0.0f};
     roomModel->scale    = {1.5f, 1.5f, 1.5f};
     roomModel->addBoundingBox({10.0f, 0.5f, 10.0f},{roomModel->position.x,roomModel->position.y+0.5f,roomModel->position.z},{roomModel->scale}); // floor
@@ -36,7 +38,7 @@ void _level02::loadAssets() {
     roomModel->addBoundingBox({10.0f,5.5f,0.5f},{0,3.0f,7.75f},roomModel->scale);  // front wall
     // BALLS INIT //
     ballPrototype = new _model();
-    ballPrototype->initModel("images/dodgeball.jpg", "models/DodgeBall.obj", _model::CUSTOM);
+    ballPrototype->initModel("images/dodgeball.jpg", "models/dodge_ball.obj", _model::CUSTOM);
     ballPrototype->scale = {0.15f, 0.15f, 0.15f};
     ballPrototype->addBoundingBox({1.0f, 1.0f, 1.0f}, ballPrototype->position, ballPrototype->scale);
     // CAMERA INIT//
@@ -50,6 +52,7 @@ void _level02::loadAssets() {
     physicsTimer->reset();
     keyTimer->reset();
     ballTimer->reset();
+    ballDeleteTimer->reset();
 }
 
 void _level02::unloadAssets()
@@ -99,11 +102,14 @@ void _level02::handleKey(UINT uMsg, WPARAM wParam) {
     }
 }
 
-int _level02::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (!noclipEnabled) return 0;
-    
+int _level02::winMsg(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_MOUSEMOVE: {
+            RECT clientRect;
+            GetClientRect(hwnd, &clientRect);
+            windowWidth = clientRect.right - clientRect.left;
+            windowHeight = clientRect.bottom - clientRect.top;
+
             int x = GET_X_LPARAM(lParam);
             int y = GET_Y_LPARAM(lParam);
             
@@ -118,20 +124,22 @@ int _level02::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             int deltaY = y - lastMouseY;
             lastMouseX = x;
             lastMouseY = y;
-            
-            const float sensitivity = 0.15f;
-            noclipCamera->rotAngle.x -= deltaX * sensitivity;
-            noclipCamera->rotAngle.y -= deltaY * sensitivity;
-            
-            if (noclipCamera->rotAngle.y > 89.0f)  noclipCamera->rotAngle.y = 89.0f;
-            if (noclipCamera->rotAngle.y < -89.0f) noclipCamera->rotAngle.y = -89.0f;
-            
-            noclipCamera->updateFPSCamera();
+            if (noclipEnabled) {
+                const float sensitivity = 0.15f;
+                noclipCamera->rotAngle.x -= deltaX * sensitivity;
+                noclipCamera->rotAngle.y -= deltaY * sensitivity;
+                
+                if (noclipCamera->rotAngle.y > 89.0f)  noclipCamera->rotAngle.y = 89.0f;
+                if (noclipCamera->rotAngle.y < -89.0f) noclipCamera->rotAngle.y = -89.0f;
+                
+                noclipCamera->updateFPSCamera();
+            }
             return 0;
         }
     }
     return 0;
 }
+
 void _level02::applyCamera() {
 
 }
@@ -142,6 +150,8 @@ void _level02::reset() {
 
 void _level02::debugPrint() {
     cout << "Player Position: (" << player->position.x << ", " << player->position.y << ", " << player->position.z << ")" << endl;
+    cout << "Mouse Position: (" << lastMouseX << ", " << lastMouseY << ")" << endl;
+    cout << "Window Size: (" << windowWidth << " x " << windowHeight << ")" << endl;
 }
 
 void _level02::update(double dt) {
@@ -157,9 +167,10 @@ void _level02::update(double dt) {
 
     float gravity = -9.81f; // gravity acceleration
     float moveSpeedCamera = 0.1f;
-    float playerMoveSpeed = 4.0f;
+    float playerMoveSpeed = 0.01f;
     float ballSpeed = 0.5f;
     bool jumpImpulse = false;
+    player->currentAnimation = IDLE;
     // COLLISION CHECKING //
     // we get a vector of ALL collisions, which affects controls
     vector<_boundingBox::collisionType> collisions = roomModel->checkCollisionWith(*playerHitBox);
@@ -172,20 +183,41 @@ void _level02::update(double dt) {
         if (shift) { noclipCamera->moveFPSUp(-moveSpeedCamera); }
     } else {
         if (w && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_Z) == collisions.end()) { 
-            player->position.z += -playerMoveSpeed * physicsDt;
+            player->position.z += -playerMoveSpeed;
+            player->rotation.y = 180.0f;
+            player->currentAnimation = WALK;
         }
         if (s && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_Z) == collisions.end()) { 
-            player->position.z += playerMoveSpeed * physicsDt;
+            player->position.z += playerMoveSpeed;
+            player->rotation.y = 0.0f;
+            player->currentAnimation = WALK;
         }
         if (a && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_X) == collisions.end()) { 
-            player->position.x += -playerMoveSpeed * physicsDt;
+            player->position.x += -playerMoveSpeed;
+            player->rotation.y = 270.0f;
+            player->currentAnimation = WALK;
         }
         if (d && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_X) == collisions.end()) { 
-            player->position.x += playerMoveSpeed * physicsDt;
+            player->position.x += playerMoveSpeed;
+            player->rotation.y = 90.0f;
+            player->currentAnimation = WALK;
         }
-        if (space && std::count(collisions.begin(), collisions.end(), _boundingBox::POS_Y) > 0) {
+        if (space && std::find(collisions.begin(), collisions.end(), _boundingBox::NONE) == collisions.end()) {
             playerVelocity.y = 10.0f; // jump impulse
             jumpImpulse = true;
+        }
+        // Diagonal Movement Adjustments    
+        if (w && a) {
+            player->rotation.y = 225.0f;
+        }
+        if (w && d) {
+            player->rotation.y = 135.0f;
+        }
+        if (s && a) {
+            player->rotation.y = 315.0f;
+        }
+        if (s && d) {
+            player->rotation.y = 45.0f;
         }
         if (shift) {
             if (ballTimer->getTicks() >= 500) { 
@@ -218,9 +250,6 @@ void _level02::update(double dt) {
     // update player hitbox
     playerHitBox->position = {player->position.x, player->position.y, player->position.z};
     // update balls hitboxes
-    for (int i = 0; i < balls.size(); i++) {
-        balls[i]->boundingBoxes[0].position = {balls[i]->position.x, balls[i]->position.y, balls[i]->position.z};
-    }
     // PHYSICS UPDATE - BALLS //
     for (int i = 0; i < balls.size(); i++) {
         vector<_boundingBox::collisionType> ballCollisions = roomModel->checkCollisionWith(balls[i]->boundingBoxes[0]);
@@ -257,6 +286,7 @@ void _level02::update(double dt) {
         balls[i]->position.x += balls[i]->velocity.x * physicsDt; 
         balls[i]->position.y += balls[i]->velocity.y * physicsDt;
         balls[i]->position.z += balls[i]->velocity.z * physicsDt;
+        balls[i]->boundingBoxes[0].position = {balls[i]->position.x, balls[i]->position.y, balls[i]->position.z};
         // TODO -- add ball removal
         if (balls[i]->position.y < -15.0f) {
             delete balls[i];
@@ -287,12 +317,12 @@ void _level02::render(const RenderFlags& flags) {
         characterCamera->setUpCamera();
     }
     if (showMapModels) {
+        player->drawPlayer();      
         roomModel->drawModel();
         for (int i = 0; i < balls.size(); i++) {
             balls[i]->drawModel();
         }
     }
-    player->render();
     if (showBoundingBoxes) {
         roomModel->displayBoundingBoxes();
         playerHitBox->displayBoundingBox();
@@ -329,11 +359,20 @@ void _level02::debugPrintCollisionInfo(const _boundingBox::collisionType& collis
 }
 
 void _level02::createBall() {
+    float ballVelocity = 10.0f; // temp
+    // normalize mouse coords between -1 and 1
+    // -1 = LEFT or BOTTOM, 1 = RIGHT or TOP
+    float mouseXNorm = (2.0f * lastMouseX) / windowWidth - 1.0f;
+    float mouseYNorm = 1.0f - (2.0f * lastMouseY) / windowHeight;
+    
     _model* newBall = new _model(*ballPrototype); // copy prototype
     newBall->modelId = modelIdList++;
     newBall->spawnTime = ballDeleteTimer->getTicks();
     newBall->position = {player->position.x, player->position.y + 1.0f, player->position.z};
-    newBall->velocity = {0.0f, 1.0f, -9.0f}; // initial throw velocity
+    newBall->velocity.x = ballVelocity * mouseXNorm;
+    newBall->velocity.y = ballVelocity * mouseYNorm;
+    newBall->velocity.z = -ballVelocity; // forward
     newBall->boundingBoxes[0].position = {newBall->position.x, newBall->position.y, newBall->position.z};
     balls.push_back(newBall);
 }
+
