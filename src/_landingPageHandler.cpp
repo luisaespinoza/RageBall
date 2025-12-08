@@ -1,10 +1,10 @@
 #include "_landingPageHandler.h"
-
+#include "_textureloader.h"
 _landingPageHandler::_landingPageHandler()
 {
     //ctor
     LandingPage = new _landingPage();
-    myTex = _textureloader();
+    myTex = new _textureloader();
     manager = nullptr; //instantiated in Main.cpp
 }
 
