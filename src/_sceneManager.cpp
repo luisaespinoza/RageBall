@@ -400,7 +400,19 @@ bool _sceneManager::isTopInGameMenu() const
 
 void _sceneManager::bootMainMenu(const string& firstLevelId)
 {
-        auto start = [this](const std::string& levelId) { ... };
-        ...
-        setCurrentScene(std::make_unique<_menuScene>( ... ));
-    }
+    auto start = [this](const std::string& levelId) {
+        setCurrentLevel(levelId);
+    };
+    auto helpMenu = [&](){
+        showHelpOverlay();
+    };
+    auto quit  = [&](){
+        PostQuitMessage(0);
+    };
+    setCurrentScene(std::make_unique<_menuScene>(
+         start,
+         helpMenu,
+         quit,
+         firstLevelId
+         ));
+}

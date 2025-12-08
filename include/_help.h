@@ -12,7 +12,10 @@ public:
     // lifecycle
     void onEnter() override {}
     void onExit() override {}
-    void onResize(int w, int h) override { width_ = (w>0)?w:1; height_ = (h>0)?h:1; }
+    void onResize(int w, int h) override
+    {
+        width_ = (w>0)?w:1; height_ = (h>0)?h:1;
+    }
     const char* name() const override { return "HelpScene"; }
 
     // loop
@@ -27,7 +30,7 @@ private:
     std::string lastInput_ = "(none)";
     CloseCallback onClose_;
 
-    void drawCenteredText(const char* text, float yNDC);
+    // void drawCenteredText(const char* text, float yNDC);
     void recordKey(WPARAM wParam);
     void recordMouse(int x, int y);
 };
