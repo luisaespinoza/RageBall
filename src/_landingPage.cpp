@@ -41,7 +41,7 @@ void _landingPage::drawButton(const buttonPage& r)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     //This draws the box
-    glColor4f(1.0f, 1.0f, 1.0f, 0.0f);  //alpha = 0 -> transparent
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  //alpha = 0 -> transparent
     glBegin(GL_QUADS);
       glVertex2i(r.x, r.y);
       glVertex2i(r.x+r.w, r.y);
