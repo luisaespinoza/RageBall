@@ -35,31 +35,49 @@ void _landingPageHandler::loadLandingPage(int ScreenW, int ScreenH)
 
 int _landingPageHandler::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    switch(uMsg)
+    switch (uMsg)
     {
-        case WM_KEYUP:
-        break;
-
         case WM_LBUTTONDOWN:
-            {
-                if(!LandingPage || !manager) return 0;
+        {
+            if (!LandingPage || !manager) return 0;
 
-                int mx = LOWORD(lParam), my = HIWORD(lParam);
-                int myInv = LandingPage->H - my; //Helps to match the windows mouse Y to openGl's Y
-                    if(LandingPage->hit(LandingPage->btnEnter, mx, myInv))
-                    {
-                        LandingPage->isLanding = false;
-                        LandingPage->start = true;
-                        manager->startManager = true;
+            int mx = LOWORD(lParam), my = HIWORD(lParam);
+            int myInv = LandingPage->H - my;
 
-                        return 0;
-                    }
-                    return 0; //if the play doesn't click the button and on somewhere else.
+            // --- DEBUG: measure button rect by 2 clicks ---
+            static int clickStage = 0;
+            static buttonPage debugRect;
+
+            if (clickStage == 0) {
+                // first click: top-left of desired button region
+                debugRect.x = mx;
+                debugRect.y = myInv;
+                clickStage = 1;
+                std::cout << "[CALIB] top-left = (" << mx << ", " << myInv << ")\n";
+            } else if (clickStage == 1) {
+                // second click: bottom-right of desired button region
+                debugRect.w = mx - debugRect.x;
+                debugRect.h = myInv - debugRect.y;
+                clickStage = 2;
+                std::cout << "[CALIB] bottom-right = (" << mx << ", " << myInv << ")\n";
+                std::cout << "[CALIB] btnEnter = { "
+                          << debugRect.x << ", "
+                          << debugRect.y << ", "
+                          << debugRect.w << ", "
+                          << debugRect.h << " };\n";
             }
-        break;
 
-        case WM_RBUTTONDOWN:
-        break;
+            // normal behavior:
+            if (LandingPage->hit(LandingPage->btnEnter, mx, myInv))
+            {
+                LandingPage->isLanding = false;
+                LandingPage->start     = true;
+                manager->startManager  = true;
+            }
+            return 0;
+        }
+
+            // ... rest unchanged ...
     }
     return 0;
 }
