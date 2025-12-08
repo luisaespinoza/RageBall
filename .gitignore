@@ -97,3 +97,5 @@ glfw*.*
 # Documentation / distribution builds
 doc/
 dist/
+/CMakeLists.txt
+/cmake-build-debug/
