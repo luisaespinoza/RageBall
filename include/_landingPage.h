@@ -31,7 +31,7 @@ class _landingPage
         void drawLandingMenu(GLuint, int, int);
         void orthoStart();
         void orthoEnd();
-
+        void updateLayou();
     protected:
 
     private:

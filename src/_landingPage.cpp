@@ -1,5 +1,12 @@
 #include "_landingPage.h"
+namespace {
+    // “design resolution” used for the button math
+    constexpr int BASE_W = 800;
+    constexpr int BASE_H = 600;
 
+    // button rect in that base resolutio
+    constexpr buttonPage BASE_BTN_ENTER = { 70, 332, 325, 78 };
+}
 _landingPage::_landingPage(int width, int height)
 {
      //ctor
@@ -8,7 +15,7 @@ _landingPage::_landingPage(int width, int height)
     start = false;
     isLanding = true;
     // myTex = _textureLoader();
-    btnEnter = {W/2 - 330, 332, 325, 78};
+    btnEnter = BASE_BTN_ENTER;
 }
 
 _landingPage::~_landingPage()
@@ -109,6 +116,17 @@ void _landingPage::orthoEnd()
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glEnable(GL_DEPTH_TEST);
+}
 
+void _landingPage::updateLayou()
+{
+    //Update button positions based on window size
+    float scaleX = static_cast<float>(W) / static_cast<float>(BASE_W);
+    float scaleY = static_cast<float>(H) / static_cast<float>(BASE_H);
+
+    btnEnter.x = static_cast<int>(BASE_BTN_ENTER.x * scaleX);
+    btnEnter.y = static_cast<int>(BASE_BTN_ENTER.y * scaleY);
+    btnEnter.w = static_cast<int>(BASE_BTN_ENTER.w * scaleX);
+    btnEnter.h = static_cast<int>(BASE_BTN_ENTER.h * scaleY);
 }
 
