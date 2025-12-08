@@ -2,8 +2,9 @@
 #define _LANDINGPAGE_H
 
 #include <_common.h>
-#include <_textureloader.h>
+// #include <_textureloader.h>
 #include <windows.h>
+#include "_textureloader.h"
 
 struct buttonPage
 {

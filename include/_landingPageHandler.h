@@ -2,8 +2,9 @@
 #define _LANDINGPAGEHANDLER_H
 
 #include <_landingPage.h>
-#include <_textureloader.h>
+// #include <_textureloader.h>
 #include <windows.h>
+#include "_textureloader.h"
 #include <_sceneManager.h>
 
 class _landingPageHandler
