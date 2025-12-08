@@ -7,13 +7,15 @@ _landingPage::_landingPage(int width, int height)
     H = height;
     start = false;
     isLanding = true;
-
+    myTex = new _textureLoader();
     btnEnter = {W/2 - 330, 332, 325, 78};
 }
 
 _landingPage::~_landingPage()
 {
     //dtor
+    delete myTex;
+    myTex = nullptr;
 }
 
 void _landingPage::drawText(int x, int y, char* s)

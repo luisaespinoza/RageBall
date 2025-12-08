@@ -1,6 +1,7 @@
 #ifndef _HELP_H
 #define _HELP_H
 #include <_common.h>
+#include <_helpMenu.h>
 
 class HelpScene : public _SceneInterface {
 public:
@@ -10,7 +11,7 @@ public:
         : onClose_(std::move(onClose)) {}
 
     // lifecycle
-    void onEnter() override {}
+    void onEnter() override;
     void onExit() override {}
     void onResize(int w, int h) override
     {
@@ -30,9 +31,11 @@ private:
     std::string lastInput_ = "(none)";
     CloseCallback onClose_;
 
+    _helpMenu helpMenuTex;
+
     // void drawCenteredText(const char* text, float yNDC);
     void recordKey(WPARAM wParam);
-    void recordMouse(int x, int y);
+    void recordMouse(int x, int y);protected:
 };
 
 #endif // _HELP_H

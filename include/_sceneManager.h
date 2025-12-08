@@ -71,14 +71,16 @@ class _sceneManager
         void updateActiveScene(double dt);
         void renderActiveScene();
         int forwardWindowMessage(HWND windowHandle, UINT message, WPARAM wParam, LPARAM lParam);
-            void togglePauseOverlay();
+        void togglePauseOverlay();
         void clearAllScenes();
         void setCurrentSceneNoEnter(std::unique_ptr<_SceneInterface> newScene);
         void bootMainMenu(const std::string& firstLevelId = "level01");
+        void showHelpOverlay();
         _light globalLight;
         bool escWasDown_ = false;
         bool suppressEnterNext_ = false;
         bool isTopInGameMenu() const;
+        bool startManager = false;
     protected:
 
     private:

@@ -16,7 +16,7 @@ class _landingPage
         _landingPage(int width = 800, int height = 600);
         virtual ~_landingPage();
 
-        _textureloader *myTex = new _textureloader();
+        _textureloader *myTex;
         buttonPage btnEnter;
         GLuint texLandingPage = 0;
 

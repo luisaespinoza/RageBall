@@ -403,7 +403,7 @@ void _sceneManager::bootMainMenu(const string& firstLevelId)
     auto start = [this](const std::string& levelId) {
         setCurrentLevel(levelId);
     };
-    auto helpMenu = [&](){
+    auto helpMenu = [this](){
         showHelpOverlay();
     };
     auto quit  = [&](){
@@ -415,4 +415,11 @@ void _sceneManager::bootMainMenu(const string& firstLevelId)
          quit,
          firstLevelId
          ));
+}
+
+void _sceneManager::showHelpOverlay()
+{
+    pushScene(std::make_unique<HelpScene>(
+        /* onClose */ [this]{ this->popScene(); }
+    ));
 }

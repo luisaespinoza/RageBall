@@ -14,9 +14,9 @@ class _landingPageHandler
 
 
     //Landing Page Testing Site
-    _landingPage *LandingPage = new _landingPage();
+    _landingPage *LandingPage;
     _textureloader myTex;
-    _sceneManager *manager = new _sceneManager();
+    _sceneManager *manager;
     GLuint LandingTex = 0;
     void loadLandingPage(int, int);
     int winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

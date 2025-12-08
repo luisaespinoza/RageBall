@@ -3,11 +3,16 @@
 _landingPageHandler::_landingPageHandler()
 {
     //ctor
+    LandingPage = new _landingPage();
+    myTex = _textureloader();
+    manager = nullptr; //instantiated in Main.cpp
 }
 
 _landingPageHandler::~_landingPageHandler()
 {
     //dtor
+    delete LandingPage;
+    delete myTex;
 }
 
 void _landingPageHandler::loadLandingPage(int ScreenW, int ScreenH)
@@ -16,7 +21,7 @@ void _landingPageHandler::loadLandingPage(int ScreenW, int ScreenH)
 
     if(LandingTex == 0)
     {
-        LandingTex = myTex.loadTexture("images/landing.jpg");
+        LandingTex = myTex->loadTexture("images/landing.jpg");
     }
 
     LandingPage->W = ScreenW;
