@@ -26,7 +26,7 @@ void _landingPageHandler::loadLandingPage(int ScreenW, int ScreenH)
 
     LandingPage->W = ScreenW;
     LandingPage->H = ScreenH;
-
+    LandingPage->updateLayout();;
     LandingPage->orthoStart();
       LandingPage->drawLandingMenu(LandingTex, ScreenW, ScreenH);
       LandingPage->draw();
