@@ -1,5 +1,5 @@
 #include "_helpMenu.h"
-#include "_textureloader.h"
+// #include "_textureloader.h"
 _helpMenu::_helpMenu(int width, int height)
 {
      //ctor
@@ -28,7 +28,7 @@ void _helpMenu::drawTextureBackground(const char* path)
     if(backgroundTex != 0)
         return;
 
-    backgroundTex = myTex.loadTexture(const_cast<char*> (path));
+    backgroundTex = myTex->loadTexture(const_cast<char*> (path));
 }
 
 void _helpMenu::drawButton(const buttonHelp& r)
