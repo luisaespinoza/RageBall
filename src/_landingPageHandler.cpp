@@ -4,7 +4,7 @@ _landingPageHandler::_landingPageHandler()
 {
     //ctor
     LandingPage = new _landingPage();
-    myTex = new _textureloader();
+    myTex = new _textureLoader();
     manager = nullptr; //instantiated in Main.cpp
 }
 
