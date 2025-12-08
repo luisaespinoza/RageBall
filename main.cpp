@@ -20,10 +20,14 @@
 #include <_scene.h>
 #include <_level01.h>
 
+
 PFNGLGENBUFFERSPROC glGenBuffers = nullptr;
 PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
 PFNGLBUFFERDATAPROC glBufferData = nullptr;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
+
+std::mt19937 RNG::generator;
+bool RNG::initialized = false;
 
 using namespace std;
 ////////_Scene *myScene = new _Scene(); //Create scene class instance
@@ -367,6 +371,7 @@ int WINAPI WinMain(
 
 char cwd[MAX_PATH];
 _getcwd(cwd, MAX_PATH);
+RNG::init();
 std::cout << "CWD: " << cwd << std::endl;
 
 	// Ask The User Which Screen Mode They Prefer

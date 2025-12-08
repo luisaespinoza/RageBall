@@ -26,6 +26,7 @@
 #include<cstring>
 #include <cstdio>
 #include<chrono>
+#include<random>
 
 // OBJ LOADER BUFFERS //
 #ifndef GL_ARRAY_BUFFER
@@ -49,6 +50,29 @@ extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 // 32-bit golden-ratio constant (used for RNG seeding / hashing)
 constexpr uint32_t GOLDEN_RATIO = 0x9E3779B9u;
 using namespace std;
+/* CLASSES */
+// Random Number Generator Utility Class -- To use just call RNG::getInt(min,max) or RNG::getFloat(min,max). Setup in main.cpp @ WinMain. Static function so only one instance exists and doesnt require instantiation.
+class RNG {
+    private:
+        static mt19937 generator;
+        static bool initialized;
+    public:
+        static void init() {
+            if (!initialized) {
+                random_device rd;
+                generator.seed(rd());
+                initialized = true;
+            }
+        }
+        static int getInt(int min, int max) {
+            uniform_int_distribution<int> distribution(min, max);
+            return distribution(generator);
+        }
+        static float getFloat(float min, float max) {
+            uniform_real_distribution<float> distribution(min, max);
+            return distribution(generator);
+        }
+};
 
 /* STRUCTS */
 struct vec2f {

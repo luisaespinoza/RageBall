@@ -1,5 +1,7 @@
 #include "_worldObjects.h"
 
+/* TARGETS */
+
 _targets::_targets()
 {
     //ctor
@@ -71,4 +73,43 @@ void _targets::drawModel()
             break;
     }
 }
-    
+
+/* BALLS */
+
+_balls::_balls()
+{
+    //ctor
+}
+
+_balls::_balls(const _balls& other) : _model(other) // calls the copy constructor of _model 
+{
+    // copy states
+    ballType = other.ballType;
+    lifeLength = other.lifeLength;
+}   
+
+_balls::~_balls()
+{
+    //dtor
+}
+
+void _balls::updateModel(double dt) {
+    // physics update
+    velocity.x += acceleration.x * dt;
+    velocity.y += acceleration.y * dt;
+    velocity.z += acceleration.z * dt;
+
+    position.x += velocity.x * dt;
+    position.y += velocity.y * dt;
+    position.z += velocity.z * dt;
+}
+
+void _balls::drawModel()
+{
+    if (ballType == BALL_FRIENDLY) {
+        color = {0.0f, 1.0f, 0.0f}; // green for friendly
+    } else if (ballType == BALL_ENEMY) {
+        color = {1.0f, 0.0f, 0.0f}; // red for enemy
+    }
+    _model::drawModel();
+}

@@ -30,5 +30,26 @@ class _targets : public _model {
             _timerPlusPlus* hitTimer = nullptr;
 };
 
+enum BallType { BALL_FRIENDLY, BALL_ENEMY };
+
+class _balls : public _model {
+    public:
+        _balls();
+        _balls(const _balls& other);    // copy constructor
+        virtual ~_balls();
+
+        BallType ballType = BALL_FRIENDLY;
+
+        float lifeLength = 5.0f; // length of time ball exists before disappearing (seconds)
+        double spawnTime = 0.0; // time when ball was created
+
+        virtual void drawModel() override;
+        // Handles ball update logic (movement, physics, etc) Doesn't handle rendering/drawing
+        void updateModel(double dt);
+
+    protected:
+    private:
+};
+
 
 #endif // _WORLD_OBJECTS_H

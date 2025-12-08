@@ -8,6 +8,10 @@ _objLoader::_objLoader()
 _objLoader::~_objLoader()
 {
     //dtor
+    if (vbo != 0) {
+        glDeleteBuffers(1, &vbo);
+        vbo = 0;
+    }
 }
 
 void _objLoader::buildBuffer() {

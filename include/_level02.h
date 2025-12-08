@@ -20,6 +20,14 @@
 #include<windowsx.h>    
 #include<_worldObjects.h>
 
+/* Stages for Level02 -- INIT is the loading stage (models/textures/etc) -- needs a loading screen!
+* LEVEL02_INIT = Loading sector. Physics is disabled, controls disabled, etc.
+* LEVEL02_PLAYING_0 = Player must shoot down 5 static targets placed around the arena
+* LEVEL02_PLAYING_1 = Player must shoot down 5 moving targets that move left and right across the arena
+* ...
+* LEVEL02_COMPLETE = Level complete, transition to next level
+*/
+enum Level02Stage { LEVEL02_INIT, LEVEL02_PLAYING_0, LEVEL02_PLAYING_1, LEVEL02_COMPLETE };
 
 class _level02 : public ILevel {
 public:
@@ -27,6 +35,8 @@ public:
     explicit _level02(const std::string& levelPath);
     ~_level02() override;
     size_t currentHallIndex = 0;
+
+    Level02Stage currentStage = LEVEL02_INIT;
 
     void handleKey(UINT uMsg, WPARAM wParam);
     int winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -40,13 +50,16 @@ public:
     // Prints Debugging Information to Console (Updates every second)
     void debugPrint();  
 
+    // The director controls the flow of the level, such as spawning targets/enemies, spawning pickups, etc. Function called only once to make changes with stage enum changed prior. If force update is true, then we tell it change the level stage without checks
+    void updateDirector(bool forceUpdate = false);
+
     bool loadFromTextFile(const std::string& path);
     void setNextLevelId(const std::string& id) { nextLevelId_ = id; }
     void setRequestNextLevel(std::function<void(const std::string&) > cb) { requestNextLevel_ = std::move(cb); }
     
     void createBall();
     // creates a target at a given position with a given speed
-    void createTarget(vec3f position, float speed);
+    void createTarget(vec3f position, float speed, int direction = 0); // direction: 1 = right, -1 = left, 0 = static
 private:
     _camera* characterCamera = nullptr;
     _camera* noclipCamera = nullptr;
@@ -69,9 +82,13 @@ private:
     _timerPlusPlus* keyTimer = nullptr;
     _timerPlusPlus* ballTimer = nullptr;
     _timerPlusPlus* ballDeleteTimer = nullptr; // Timer for deleting ballz
+    _timerPlusPlus* directorTimer = nullptr;
+    _timerPlusPlus* ballThrowTimer = nullptr;
     // balls!
-    vector<_model*> balls;
-    _model* ballPrototype = nullptr;
+    //vector<_model*> balls;
+    //_model* ballPrototype = nullptr;
+    _balls* ballPrototype = nullptr;
+    vector<_balls*> balls;
 
     // PLAYER INFO //
     vec3f playerAccel = {0.0f, 0.0f, 0.0f};
@@ -98,6 +115,7 @@ private:
     int windowWidth = 0;
     int windowHeight = 0;
     bool firstMouse = true;
+    float ballPower = 0.0f;
 };
 
 #endif // _LEVEL02_H

@@ -34,8 +34,7 @@ class _model
         enum modelType {TEAPOT, TORUS, CUBE, SPHERE, CUSTOM};
         modelType currentModel;
         int modelId;
-        double spawnTime; // time when model was created, used for deletion primarily
-
+        
         // Initialize model with texture + model
         void initModel(char* texPath, char* modelPath, modelType currentModel);
         // Initialize model with texture only (primitive model ONLY)
