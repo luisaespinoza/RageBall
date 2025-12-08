@@ -5,7 +5,7 @@
 // #include <_textureloader.h>
 #include <windows.h>
 #include <_sceneManager.h>
-class _textureloader;
+class _textureLoader;
 class _landingPageHandler
 {
     public:
@@ -15,7 +15,7 @@ class _landingPageHandler
 
     //Landing Page Testing Site
     _landingPage *LandingPage;
-    _textureloader myTex;
+    _textureLoader *myTex;
     _sceneManager *manager;
     GLuint LandingTex = 0;
     void loadLandingPage(int, int);
