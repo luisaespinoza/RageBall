@@ -6,6 +6,7 @@ _helpMenu::_helpMenu(int width, int height)
     W = width;
     H = height;
     btnBack = {W/2 - 300, 370, 225, 60};
+    myTex = new _textureLoader();
 }
 
 _helpMenu::~_helpMenu()

@@ -27,7 +27,7 @@ class _helpMenu
     protected:
 
     private:
-        // _textureloader myTex;
+        _textureLoader myTex;
         GLuint backgroundTex = 0;
 };
 
