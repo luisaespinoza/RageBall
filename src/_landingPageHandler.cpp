@@ -24,13 +24,26 @@ void _landingPageHandler::loadLandingPage(int ScreenW, int ScreenH)
         LandingTex = myTex->loadTexture("images/landing.jpg");
     }
 
-    LandingPage->W = ScreenW;
-    LandingPage->H = ScreenH;
-    LandingPage->updateLayout();;
+    // Get the real GL viewport size
+    GLint vp[4];
+    glGetIntegerv(GL_VIEWPORT, vp);
+    const int vw = vp[2];
+    const int vh = vp[3];
+
+    LandingPage->W = vw;
+    LandingPage->H = vh;
+
     LandingPage->orthoStart();
-      LandingPage->drawLandingMenu(LandingTex, ScreenW, ScreenH);
-      LandingPage->draw();
+    LandingPage->drawLandingMenu(LandingTex, vw, vh);
+    LandingPage->draw();
     LandingPage->orthoEnd();
+    // LandingPage->W = ScreenW;
+    // LandingPage->H = ScreenH;
+    // LandingPage->updateLayout();;
+    // LandingPage->orthoStart();
+    //   LandingPage->drawLandingMenu(LandingTex, ScreenW, ScreenH);
+    //   LandingPage->draw();
+    // LandingPage->orthoEnd();
 }
 
 int _landingPageHandler::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -41,34 +54,18 @@ int _landingPageHandler::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         {
             if (!LandingPage || !manager) return 0;
 
-            int mx = LOWORD(lParam), my = HIWORD(lParam);
-            int myInv = LandingPage->H - my;
+            int mx = GET_X_LPARAM(lParam);
+            int my = GET_Y_LPARAM(lParam);
 
-            // --- DEBUG: measure button rect by 2 clicks ---
-            static int clickStage = 0;
-            static buttonPage debugRect;
+            // Use the same viewport the landing page draws into
+            GLint vp[4];
+            glGetIntegerv(GL_VIEWPORT, vp);
+            int vh = vp[3];
 
-            if (clickStage == 0) {
-                first click: top-left of desired button region
-                debugRect.x = mx;
-                debugRect.y = myInv;
-                clickStage = 1;
-                std::cout << "[CALIB] top-left = (" << mx << ", " << myInv << ")\n";
-            } else if (clickStage == 1) {
-                second click: bottom-right of desired button region
-                debugRect.w = mx - debugRect.x;
-                debugRect.h = myInv - debugRect.y;
-                clickStage = 2;
-                std::cout << "[CALIB] bottom-right = (" << mx << ", " << myInv << ")\n";
-                std::cout << "[CALIB] btnEnter = { "
-                          << debugRect.x << ", "
-                          << debugRect.y << ", "
-                          << debugRect.w << ", "
-                          << debugRect.h << " };\n";
-            }
+            // Win32 (0,0 top-left) -> GL (0,0 bottom-left)
+            int myGL = vh - my - 1;
 
-            // normal behavior:
-            if (LandingPage->hit(LandingPage->btnEnter, mx, myInv))
+            if (LandingPage->hit(LandingPage->btnEnter, mx, myGL))
             {
                 LandingPage->isLanding = false;
                 LandingPage->start     = true;
@@ -77,7 +74,8 @@ int _landingPageHandler::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
             return 0;
         }
 
-            // ... rest unchanged ...
+        default:
+            break;
     }
     return 0;
 }
