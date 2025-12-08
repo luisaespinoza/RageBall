@@ -99,3 +99,4 @@ doc/
 dist/
 /CMakeLists.txt
 /cmake-build-debug/
+/RageBall.cbp
