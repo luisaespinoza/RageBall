@@ -219,7 +219,8 @@ void LoadLevelScene::onEnter(){
 
 void LoadLevelScene::onExit() {
     if (level) {
-        level->unloadAssets();
+        // Level uses a smart pointer, it auto calls destructors -- calling the unload assets manually can segfault from double-delete
+        //level->unloadAssets();
     }
 }
 

@@ -33,7 +33,7 @@ class _level02 : public ILevel {
 public:
     _level02();
     explicit _level02(const std::string& levelPath);
-    ~_level02() override;
+    virtual ~_level02() override;
     size_t currentHallIndex = 0;
 
     Level02Stage currentStage = LEVEL02_INIT;
