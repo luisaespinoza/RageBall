@@ -118,7 +118,7 @@ void _landingPage::orthoEnd()
     glEnable(GL_DEPTH_TEST);
 }
 
-void _landingPage::updateLayou()
+void _landingPage::updateLayout()
 {
     //Update button positions based on window size
     float scaleX = static_cast<float>(W) / static_cast<float>(BASE_W);
