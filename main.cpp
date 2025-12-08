@@ -346,7 +346,6 @@ LRESULT CALLBACK WndProc(
 //				THE WINMAIN
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-// cpp
 int WINAPI WinMain(
     HINSTANCE	hInstance,	    // Instance
     HINSTANCE	hPrevInstance,	// Previous Instance
@@ -421,7 +420,7 @@ int WINAPI WinMain(
         }
     }
 
-    // Handle fullscreen toggle on F1 (original behavior preserved)
+    // Handle fullscreen toggle on F1 (preserve original behavior)
     if (keys[VK_F1]) {
         keys[VK_F1] = FALSE;
         KillGLWindow();
