@@ -346,53 +346,39 @@ LRESULT CALLBACK WndProc(
 //				THE WINMAIN
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+// cpp
 int WINAPI WinMain(
+    HINSTANCE	hInstance,	    // Instance
+    HINSTANCE	hPrevInstance,	// Previous Instance
+    LPSTR	lpCmdLine,		    // Command Line Parameters
+    int		nCmdShow)	    	// Window Show State
+{
+    MSG msg{};					        // Windows Message Structure
+    BOOL done = FALSE;				    // Bool Variable To Exit Loop
 
-            HINSTANCE	hInstance,	    // Instance
-		    HINSTANCE	hPrevInstance,	// Previous Instance
-		    LPSTR	lpCmdLine,		    // Command Line Parameters
-		    int		nCmdShow)	    	// Window Show State
-   {
- 	MSG	msg;					        // Windows Message Structure
-	BOOL	done=FALSE;				    // Bool Variable To Exit Loop
-
-	int	fullscreenWidth  = GetSystemMetrics(SM_CXSCREEN);
-    int	fullscreenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-
+    int fullscreenWidth  = GetSystemMetrics(SM_CXSCREEN);
+    int fullscreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
     char cwd[MAX_PATH];
     _getcwd(cwd, MAX_PATH);
     std::cout << "CWD: " << cwd << std::endl;
 
-        // Ask The User Which Screen Mode They Prefer
-    /*	if (MessageBox(NULL," Would You Like To Run In Fullscreen Mode?", "Start FullScreen?",MB_YESNO|MB_ICONQUESTION)==IDNO)
-	{
-		fullscreen=FALSE;			    // Windowed Mode
-	}
-    */
+    // Create Our OpenGL Window
+    fullscreen = FALSE;
+    if (!CreateGLWindow("Game Engine Lesson 01", fullscreenWidth, fullscreenHeight, 256, fullscreen))
+        return 0;				        // Quit If Window Was Not Created
 
-	// Create Our OpenGL Window
-	fullscreen=FALSE;
-	if (!CreateGLWindow("Game Engine Lesson 01",fullscreenWidth,fullscreenHeight,256,fullscreen))
-	{
-		return 0;				        // Quit If Window Was Not Created
-	}
+    handlerLanding.LandingPage = &landing;
+    handlerLanding.manager = &scenes;
 
-	handlerLanding.LandingPage = &landing;
-	handlerLanding.manager = &scenes;
+    scenes.initlGL();
+    scenes.applyPerspective(fullscreenWidth, fullscreenHeight);
 
-	scenes.initlGL();
-	scenes.applyPerspective(fullscreenWidth, fullscreenHeight);
-
-	 gCrosshair = LoadCursorFromFileA("images/crosshair.cur");
-    if (gCrosshair)
-                {
-                    SetClassLongPtrA(hWnd, GCLP_HCURSOR, reinterpret_cast<LONG_PTR>(gCrosshair));
-                    SetCursor(gCrosshair);
-                }
-			   // myScene->reSizeScene(GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN));
-//			   myScene->setMode(SceneMode::MainMenu);
+    gCrosshair = LoadCursorFromFileA("images/crosshair.cur");
+    if (gCrosshair) {
+        SetClassLongPtrA(hWnd, GCLP_HCURSOR, reinterpret_cast<LONG_PTR>(gCrosshair));
+        SetCursor(gCrosshair);
+    }
 
     LARGE_INTEGER freq{}, prev{}, now{};
     QueryPerformanceFrequency(&freq);
@@ -400,73 +386,53 @@ int WINAPI WinMain(
 
     bool gameplayInit = false;
 
-	while(!done)					    // Loop That Runs While done=FALSE
-	//TODO handle prompt to confirm for quit
-
-    //while (msg.message != WM_QUIT) {
-	{
-	  if (PeekMessage(&msg,NULL,0,0,PM_REMOVE))	// Is There A Message Waiting?
-		{
-			if (msg.message==WM_QUIT)	// Have We Received A Quit Message?
-			{
-				done=TRUE;		        // If So done=TRUE
-					//TODO handle prompt to confirm for quit
-			}
-			else				        // If Not, Deal With Window Messages
-			{
-				TranslateMessage(&msg);	// Translate The Message
-				DispatchMessage(&msg);	// Dispatch The Message
-			}
+    // Main loop
+    while (!done) {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                done = TRUE;
+            } else {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            continue;
         }
-        else						        // If There Are No Messages
-		{
-            // Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
-			if (!active || keys[VK_ESCAPE])	// Active?  Was There A Quit Received?
-			{
-				//done=TRUE;		        // ESC or DrawGLScene Signalled A Quit
-			}
-			else				        // Not Time To Quit, Update Screen
-			{
-                QueryPerformanceCounter(&now);
-                double dt = double(now.QuadPart - prev.QuadPart) / double(freq.QuadPart);
-                prev = now;
 
-                if(landing.isLanding)
-                {
-                    handlerLanding.loadLandingPage(fullscreenWidth, fullscreenHeight);
-                }
-                else if(scenes.startManager)
-                {
-                    if(!gameplayInit)
-                    {
-                       scenes.bootMainMenu("level01");
-                       gameplayInit = true;
-                    }
-                    // Boot into main menu; when "Start" is clicked, load "gameplay_intro"
-                    scenes.updateActiveScene(dt);
-                    scenes.renderActiveScene();
-                }
-                SwapBuffers(hDC);	    // Swap Buffers (Double Buffering)
-			}
-		}
-	}
+        // No pending messages: update / render
+        if (!active || keys[VK_ESCAPE]) {
+            // Optionally handle pause/quit here
+        } else {
+            QueryPerformanceCounter(&now);
+            double dt = double(now.QuadPart - prev.QuadPart) / double(freq.QuadPart);
+            prev = now;
 
-	if (keys[VK_F1])		    // Is F1 Being Pressed?
-    {
-        keys[VK_F1]=FALSE;	    // If So Make Key FALSE
-        KillGLWindow();		    // Kill Our Current Window
-        fullscreen=!fullscreen;	// Toggle Fullscreen / Windowed Mode
-        // Recreate Our OpenGL Window
-		if (!CreateGLWindow("Game Engine Lesson 01",fullscreenWidth,fullscreenHeight,256,fullscreen))
-        {
-            return 0;	        // Quit If Window Was Not Created
-		}
+            if (landing.isLanding) {
+                handlerLanding.loadLandingPage(fullscreenWidth, fullscreenHeight);
+            } else if (scenes.startManager) {
+                if (!gameplayInit) {
+                    scenes.bootMainMenu("level01");
+                    gameplayInit = true;
+                }
+                scenes.updateActiveScene(dt);
+                scenes.renderActiveScene();
+            }
+
+            SwapBuffers(hDC);	    // Swap Buffers (Double Buffering)
+        }
     }
 
-	// Shutdown
-	KillGLWindow();					    // Kill The Window
+    // Handle fullscreen toggle on F1 (original behavior preserved)
+    if (keys[VK_F1]) {
+        keys[VK_F1] = FALSE;
+        KillGLWindow();
+        fullscreen = !fullscreen;
+        if (!CreateGLWindow("Game Engine Lesson 01", fullscreenWidth, fullscreenHeight, 256, fullscreen)) {
+            return 0;
+        }
+    }
+
+    // Shutdown
+    KillGLWindow();
     if (gCrosshair) { DestroyCursor(gCrosshair); gCrosshair = nullptr; }
-	return (msg.wParam);				// Exit The Program
-
-
+    return static_cast<int>(msg.wParam);
 }
