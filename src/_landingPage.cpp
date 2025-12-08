@@ -117,7 +117,7 @@ void _landingPage::orthoEnd()
     // glPopMatrix();
     // glMatrixMode(GL_MODELVIEW);
     // glEnable(GL_DEPTH_TEST);
-    glMatriceMode(GL_MODELVIEW);
+    glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
