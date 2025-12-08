@@ -13,7 +13,7 @@
 #include <iostream>
 #include <windows.h>	// Header File For Windows
 #include <gl/gl.h>
-
+#include <gl/glu.h>
 #include <_sceneManager.h>
 #include <_menuScene.h>
 #include <_scene.h>
