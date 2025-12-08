@@ -274,8 +274,8 @@ void _level02::update(double dt) {
     const bool leftMouse = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 
     float gravity = -9.81f; // gravity acceleration
-    float moveSpeedCamera = 0.1f;
-    float playerMoveSpeed = 0.03f;
+    float moveSpeedCamera = 8.0f;
+    float playerMoveSpeed = 8.0f;
     float ballSpeed = 0.5f;
     bool jumpImpulse = false;
     player->currentAnimation = IDLE;
@@ -285,30 +285,30 @@ void _level02::update(double dt) {
     vector<_boundingBox::collisionType> outerCollisions = outer_court->checkCollisionWith(*playerHitBox);
     collisions.insert(collisions.end(), outerCollisions.begin(), outerCollisions.end());
     if (noclipEnabled) {
-        if (w) {noclipCamera->moveFPSForward(moveSpeedCamera);}
-        if (a) {noclipCamera->moveFPSStrafe(moveSpeedCamera);}
-        if (s) {noclipCamera->moveFPSForward(-moveSpeedCamera);}
-        if (d) {noclipCamera->moveFPSStrafe(-moveSpeedCamera);}
-        if (space) { noclipCamera->moveFPSUp(moveSpeedCamera); }
-        if (shift) { noclipCamera->moveFPSUp(-moveSpeedCamera); }
+        if (w) {noclipCamera->moveFPSForward(moveSpeedCamera*physicsDt);}
+        if (a) {noclipCamera->moveFPSStrafe(moveSpeedCamera*physicsDt);}
+        if (s) {noclipCamera->moveFPSForward(-moveSpeedCamera*physicsDt);}
+        if (d) {noclipCamera->moveFPSStrafe(-moveSpeedCamera*physicsDt);}
+        if (space) { noclipCamera->moveFPSUp(moveSpeedCamera*physicsDt); }
+        if (shift) { noclipCamera->moveFPSUp(-moveSpeedCamera*physicsDt); }
     } else {
         if (w && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_Z) == collisions.end()) { 
-            player->position.z += -playerMoveSpeed;
+            player->position.z += -playerMoveSpeed * physicsDt;
             player->rotation.y = 180.0f;
             player->currentAnimation = WALK;
         }
         if (s && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_Z) == collisions.end()) { 
-            player->position.z += playerMoveSpeed;
+            player->position.z += playerMoveSpeed * physicsDt;
             player->rotation.y = 0.0f;
             player->currentAnimation = WALK;
         }
         if (a && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_X) == collisions.end()) { 
-            player->position.x += -playerMoveSpeed;
+            player->position.x += -playerMoveSpeed * physicsDt;
             player->rotation.y = 270.0f;
             player->currentAnimation = WALK;
         }
         if (d && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_X) == collisions.end()) { 
-            player->position.x += playerMoveSpeed;
+            player->position.x += playerMoveSpeed * physicsDt;
             player->rotation.y = 90.0f;
             player->currentAnimation = WALK;
         }
