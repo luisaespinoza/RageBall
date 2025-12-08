@@ -5,7 +5,8 @@ namespace {
     constexpr int BASE_H = 600;
 
     // button rect in that base resolutio
-    constexpr buttonPage BASE_BTN_ENTER = { 70, 332, 325, 78 };
+    // constexpr buttonPage BASE_BTN_ENTER = { 70, 332, 325, 78 };
+    constexpr buttonPage BASE_BTN_ENTER = { 200, 760, 720, 200 };
 }
 _landingPage::_landingPage(int width, int height)
 {
