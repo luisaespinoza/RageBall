@@ -1,8 +1,8 @@
 #include "_landingPage.h"
 namespace {
     // “design resolution” used for the button math
-    constexpr int BASE_W = 800;
-    constexpr int BASE_H = 600;
+    constexpr int BASE_W = 3840;
+    constexpr int BASE_H = 2160;
 
     // button rect in that base resolutio
     // constexpr buttonPage BASE_BTN_ENTER = { 70, 332, 325, 78 };
