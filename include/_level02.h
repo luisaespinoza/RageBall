@@ -18,6 +18,7 @@
 #include<_timerPlusPlus.h>
 #include<_boundingBox.h>
 #include<windowsx.h>    
+#include<_worldObjects.h>
 
 
 class _level02 : public ILevel {
@@ -44,10 +45,22 @@ public:
     void setRequestNextLevel(std::function<void(const std::string&) > cb) { requestNextLevel_ = std::move(cb); }
     
     void createBall();
+    // creates a target at a given position with a given speed
+    void createTarget(vec3f position, float speed);
 private:
     _camera* characterCamera = nullptr;
     _camera* noclipCamera = nullptr;
-    _model* roomModel = nullptr; // Dimensions of room are (10x5.5x10) centered at origin (interior!)
+    // MAP MODELS //
+    _model* bleachers = nullptr;
+    _model* front_back_walls = nullptr;
+    _model* left_wall = nullptr;
+    _model* right_wall = nullptr;           
+    _model* outer_court = nullptr;          // Outer sector, decorative only
+    _model* main_court = nullptr;           // Main stage, only area player can walk.
+    // target
+    _targets* targetPrototype = nullptr;
+    vector<_targets*> targets;
+
     Player* player = nullptr;
     _boundingBox* playerHitBox = nullptr;
     _timerPlusPlus* debugTimer = nullptr;

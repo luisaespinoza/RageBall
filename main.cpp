@@ -322,7 +322,12 @@ LRESULT CALLBACK WndProc(
 
 		case WM_SIZE:				// Resize The OpenGL Window
 		{
-          scenes.forwardWindowMessage(hWnd,uMsg,wParam,lParam);                         // LoWord=Width, HiWord=Height
+			int newWidth = LOWORD(lParam);  // LoWord=Width
+			int newHeight = HIWORD(lParam); // HiWord=Height
+
+			// resize screen
+			scenes.handleResizeEvent(newWidth, newHeight);
+          	scenes.forwardWindowMessage(hWnd,uMsg,wParam,lParam);                         // LoWord=Width, HiWord=Height
 			return 0;			    // Jump Back
 		}
 
@@ -454,6 +459,8 @@ std::cout << "CWD: " << cwd << std::endl;
 				{
 					return 0;	        // Quit If Window Was Not Created
 				}
+				scenes.initlGL();
+				scenes.applyPerspective(fullscreenWidth, fullscreenHeight);
 			}
 		}
 	}

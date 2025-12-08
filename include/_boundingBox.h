@@ -15,6 +15,7 @@ class _boundingBox
         vec3f dimensions; // size of box in x,y,z directions
         vec3f position;   // center position of box in world space
         vec3f scale;      // scale of box in x,y,z directions (used for scaling of model)
+        vec3f positionOffset; // offset from model position
         
         void initBoundingBox(vec3f dim, vec3f pos, vec3f scale);
         // Penetration Depth collision detection (allows for directionality)

@@ -36,8 +36,8 @@ this->setCurrentScene(std::make_unique<_menuScene>(
         ));
     },
     /* onQuit  */ [this]{ PostQuitMessage(0); },
-    "level01"
-    //"level02"   // TEMP FOR TESTING
+    //"level01"
+    "level02"   // TEMP FOR TESTING
 ));
 }
 

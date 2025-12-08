@@ -13,17 +13,18 @@ class _model
         _model(const _model& other);
         virtual ~_model();
 
-        _textureLoader *texLoader = new _textureLoader();
-        _objLoader *model3DLoader = new _objLoader();
+        bool ownsResources = true; // required for proper deletion of inherited resouces + copied classes. This is set to true for a sinular instance, but NOT for copies! Only the template owns their heap-allocated memory
 
-        vec3f rotation;
-        vec3f position;
-        vec3f scale;
-        col3f color;
+        _textureLoader *texLoader = nullptr;
+        _objLoader *model3DLoader = nullptr;
 
-        // for physics
-        vec3 velocity;
-        vec3 acceleration;
+        vec3f rotation = {0.0f,0.0f,0.0f};
+        vec3f position = {0.0f,1.0f,0.0f};
+        vec3f scale = {1.0f,1.0f,1.0f};
+        col3f color = {1.0f,1.0f,1.0f};
+        // physics
+        vec3f velocity = {0.0f,0.0f,0.0f};
+        vec3f acceleration = {0.0f,0.0f,0.0f};
 
         vector<_boundingBox> boundingBoxes; // Models can have multiple bounding boxes for collision detection
 
@@ -40,7 +41,7 @@ class _model
         // Initialize model with texture only (primitive model ONLY)
         void initModel(char* texPath, modelType currentModel);
         // Draw the model
-        void drawModel();
+        virtual void drawModel();
         // Display bounding boxes for debugging
         void displayBoundingBoxes();
         // Add a bounding box to the model

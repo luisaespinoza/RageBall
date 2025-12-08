@@ -1,8 +1,14 @@
 #include "_level02.h"
 
 _level02::_level02() {
+    bleachers = new _model();
+    front_back_walls = new _model();
+    left_wall = new _model();
+    right_wall = new _model();
+    outer_court = new _model();
+    main_court = new _model();
+
     player = new Player();
-    roomModel = new _model();
     textureLoader = new _textureLoader();
     characterCamera = new _camera();
     debugTimer = new _timerPlusPlus();
@@ -22,25 +28,33 @@ void _level02::loadAssets() {
     // PLAYER INIT //
     //player->init("models/megaman/tris.md2", "models/megaman/MegaMan.pcx", *textureLoader);
     //player->applyScale(0.005f);
-    player->vec_scale = {0.08f, 0.08f, 0.08f};
+    player->vec_scale = {0.15f, 0.15f, 0.15f};
     player->initPlayer();
     player->position = {0.0f, 1.0f, -2.0f};
     //player->radius   = 0.05f;
     playerHitBox->initBoundingBox({0.25f, 0.4f, 0.25f}, {player->position.x, player->position.y + 0.9f, player->position.z}, {1.0f, 1.0f, 1.0f});
-    // ROOM MODEL INIT //
-    roomModel->initModel("images/back.jpg","models/arena.obj", _model::CUSTOM);
-    roomModel->position = {0.0f, -1.0f, 0.0f};
-    roomModel->scale    = {1.5f, 1.5f, 1.5f};
-    roomModel->addBoundingBox({10.0f, 0.5f, 10.0f},{roomModel->position.x,roomModel->position.y+0.5f,roomModel->position.z},{roomModel->scale}); // floor
-    roomModel->addBoundingBox({0.5f,5.5f,10.0f},{-7.75f,3.0f,0},roomModel->scale); // left wall
-    roomModel->addBoundingBox({0.5f,5.5f,10.0f},{7.75f,3.0f,0},roomModel->scale);  // right wall
-    roomModel->addBoundingBox({10.0f,5.5f,0.5f},{0,3.0f,-7.75f},roomModel->scale); // back wall
-    roomModel->addBoundingBox({10.0f,5.5f,0.5f},{0,3.0f,7.75f},roomModel->scale);  // front wall
+    // ARENA MODELS INTI //
+    // models
+    main_court->initModel("images/arena/main_court.png","models/arena/main_court.obj", _model::CUSTOM);
+    outer_court->initModel("images/arena/wall.jpg","models/arena/outer_court.obj", _model::CUSTOM);
+    bleachers->initModel("images/arena/wall.jpg","models/arena/bleachers.obj", _model::CUSTOM);
+    front_back_walls->initModel("images/arena/wall.jpg","models/arena/front_back_walls.obj", _model::CUSTOM);
+    left_wall->initModel("images/arena/wall.jpg","models/arena/left_wall.obj", _model::CUSTOM);
+    right_wall->initModel("images/arena/wall.jpg","models/arena/right_wall.obj", _model::CUSTOM);
+    // bounding boxes
+    main_court->addBoundingBox({47.0f,1.0f,88.0f});
+    outer_court->addBoundingBox({25.0f,12.0f,1.0f}, {0.0f, 6.0f, -25.0f}, outer_court->scale);  // back wall
+    outer_court->addBoundingBox({25.0f,12.0f,1.0f}, {0.0f, 6.0f, 25.0f}, outer_court->scale);   // front wall
+    outer_court->addBoundingBox({1.0f,12.0f,50.0f}, {-12.5f, 6.0f, 0.0f}, outer_court->scale);   // left wall
+    outer_court->addBoundingBox({1.0f,12.0f,50.0f}, {12.5f, 6.0f, 0.0f}, outer_court->scale);   // right wall
     // BALLS INIT //
     ballPrototype = new _model();
     ballPrototype->initModel("images/dodgeball.jpg", "models/dodge_ball.obj", _model::CUSTOM);
     ballPrototype->scale = {0.15f, 0.15f, 0.15f};
     ballPrototype->addBoundingBox({1.0f, 1.0f, 1.0f}, ballPrototype->position, ballPrototype->scale);
+    // TARGETS INIT //
+    targetPrototype = new _targets();
+    targetPrototype->initModel("images/target/target.jpg", "models/target/target_main.obj", _model::CUSTOM);
     // CAMERA INIT//
     characterCamera->camInit();
     noclipCamera->camInit();
@@ -64,7 +78,14 @@ void _level02::unloadAssets()
     delete ballPrototype;
     delete characterCamera;
     delete noclipCamera;
-    delete roomModel;
+
+    delete bleachers;
+    delete front_back_walls;
+    delete left_wall;
+    delete right_wall;
+    delete outer_court;
+    delete main_court;
+
     delete player;
     delete playerHitBox;
     delete debugTimer;
@@ -96,6 +117,13 @@ void _level02::handleKey(UINT uMsg, WPARAM wParam) {
                 cout << "Toggled Noclip Mode: " << (noclipEnabled ? "OFF" : "ON") << endl;
                 noclipEnabled = !noclipEnabled;
                 firstMouse = true; // reset for noclip mouse movement
+                keyTimer->reset();
+            }
+            break;
+        case VK_ADD:
+            if (keyTimer->getTicks() > 300) {
+                cout << "Spawning a target!" << endl;
+                createTarget({0.0f, 2.0f, 0.0f}, 1.3f);
                 keyTimer->reset();
             }
             break;
@@ -167,13 +195,15 @@ void _level02::update(double dt) {
 
     float gravity = -9.81f; // gravity acceleration
     float moveSpeedCamera = 0.1f;
-    float playerMoveSpeed = 0.01f;
+    float playerMoveSpeed = 0.03f;
     float ballSpeed = 0.5f;
     bool jumpImpulse = false;
     player->currentAnimation = IDLE;
     // COLLISION CHECKING //
     // we get a vector of ALL collisions, which affects controls
-    vector<_boundingBox::collisionType> collisions = roomModel->checkCollisionWith(*playerHitBox);
+    vector<_boundingBox::collisionType> collisions = main_court->checkCollisionWith(*playerHitBox);
+    vector<_boundingBox::collisionType> outerCollisions = outer_court->checkCollisionWith(*playerHitBox);
+    collisions.insert(collisions.end(), outerCollisions.begin(), outerCollisions.end());
     if (noclipEnabled) {
         if (w) {noclipCamera->moveFPSForward(moveSpeedCamera);}
         if (a) {noclipCamera->moveFPSStrafe(moveSpeedCamera);}
@@ -237,7 +267,7 @@ void _level02::update(double dt) {
     }
     // CAMERA HANDLING //
     characterCamera->des = player->position;
-    characterCamera->eye = {player->position.x, player->position.y + 1.25f, player->position.z + 3.0f};
+    characterCamera->eye = {player->position.x, player->position.y + 1.20f, player->position.z + 4.0f};
     // PHYSICS UPDATE //
     // Update velocity by acceleration
     playerVelocity.x += playerAccel.x * physicsDt; 
@@ -252,7 +282,7 @@ void _level02::update(double dt) {
     // update balls hitboxes
     // PHYSICS UPDATE - BALLS //
     for (int i = 0; i < balls.size(); i++) {
-        vector<_boundingBox::collisionType> ballCollisions = roomModel->checkCollisionWith(balls[i]->boundingBoxes[0]);
+        vector<_boundingBox::collisionType> ballCollisions = main_court->checkCollisionWith(balls[i]->boundingBoxes[0]);
         bool movementImpulse = false; // if true prevents collision to allow for movement to adjust
         if (std::count(ballCollisions.begin(), ballCollisions.end(), _boundingBox::POS_Y) == 0) {
             // ball in air
@@ -287,7 +317,6 @@ void _level02::update(double dt) {
         balls[i]->position.y += balls[i]->velocity.y * physicsDt;
         balls[i]->position.z += balls[i]->velocity.z * physicsDt;
         balls[i]->boundingBoxes[0].position = {balls[i]->position.x, balls[i]->position.y, balls[i]->position.z};
-        // TODO -- add ball removal
         if (balls[i]->position.y < -15.0f) {
             delete balls[i];
             balls.erase(balls.begin() + i);
@@ -297,6 +326,27 @@ void _level02::update(double dt) {
             balls.erase(balls.begin() + i);
             i--; // adjust index after removal          
         }    
+    }
+    // TARGET UPDATES //
+    for (int i = 0; i < targets.size(); i++) {
+        // movement
+        targets[i]->updateModel(physicsDt);
+        // collison check
+        for (int j = 0; j < balls.size(); j++) {
+            if (targets[i]->isCollidingWith(balls[j]->boundingBoxes[0])) {
+                targets[i]->targetHit();
+                break;
+            }
+        }
+        // move collison box
+        targets[i]->boundingBoxes[0].position = targets[i]->position;
+    }
+    // TARGET DELETION //
+    for (int i = targets.size()-1; i >=0 ; i--) {   
+        if (targets[i]->state == DEAD) {
+            delete targets[i];
+            targets.erase(targets.begin() + i);
+        }
     }
     physicsTimer->reset();
     // DEBUG PRINTING //
@@ -316,18 +366,30 @@ void _level02::render(const RenderFlags& flags) {
     else {
         characterCamera->setUpCamera();
     }
-    if (showMapModels) {
-        player->drawPlayer();      
-        roomModel->drawModel();
-        for (int i = 0; i < balls.size(); i++) {
-            balls[i]->drawModel();
-        }
-    }
     if (showBoundingBoxes) {
-        roomModel->displayBoundingBoxes();
+        outer_court->displayBoundingBoxes();
+        main_court->displayBoundingBoxes();
         playerHitBox->displayBoundingBox();
         for (int i = 0; i < balls.size(); i++) {
             balls[i]->displayBoundingBoxes();
+        }
+        for (int i = 0; i < targets.size(); i++) {
+            targets[i]->displayBoundingBoxes();
+        }
+    }
+    if (showMapModels) {
+        player->drawPlayer();      
+        main_court->drawModel();
+        outer_court->drawModel();
+        bleachers->drawModel();
+        front_back_walls->drawModel();
+        left_wall->drawModel();
+        right_wall->drawModel();
+        for (int i = 0; i < balls.size(); i++) {
+            balls[i]->drawModel();
+        }
+        for (int i = 0; i < targets.size(); i++) {
+            targets[i]->drawModel();
         }
     }
 }
@@ -375,4 +437,21 @@ void _level02::createBall() {
     newBall->boundingBoxes[0].position = {newBall->position.x, newBall->position.y, newBall->position.z};
     balls.push_back(newBall);
 }
+
+void _level02::createTarget(vec3f position, float speed) {
+    _targets* newTarget = new _targets(*targetPrototype); // copy prototype
+    newTarget->scale = {0.3f, 0.3f, 0.3f};
+    newTarget->position = position;
+    newTarget->rotation.x = 90.0f;
+
+    newTarget->speed = speed;
+    newTarget->direction = 1; // start moving right
+    newTarget->leftBound = -12.5f;
+    newTarget->rightBound = 12.5f;
+
+    newTarget->addBoundingBox({4.5f, 4.5f, 0.3f});
+    targets.push_back(newTarget);
+}
+
+
 

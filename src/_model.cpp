@@ -3,41 +3,19 @@
 _model::_model()
 {
     //ctor
-        rotation = {0.0f,0.0f,0.0f};
-        position = {0.0f,1.0f,0.0f};
-        scale = {1.0f,1.0f,1.0f};
-        color = {1.0f,1.0f,1.0f};
-        velocity = {0.0f,0.0f,0.0f};
-        acceleration = {0.0f,0.0f,0.0f};
+    ownsResources = true; // single instance owns resources
+    texLoader = new _textureLoader();
+    model3DLoader = new _objLoader();
 }
 
 _model::_model(const _model& other)
 {    
+    ownsResources = false; // copies do not own resources
     // copy texture
-    this->texLoader = new _textureLoader();
-    if (other.texLoader) {
-        this->texLoader->textID = other.texLoader->textID;  
-        this->texLoader->width = other.texLoader->width;
-        this->texLoader->height = other.texLoader->height;
-    }
-    
-    // copy model
-    this->model3DLoader = new _objLoader();
-    if (other.model3DLoader) {
-        this->model3DLoader->vbo = other.model3DLoader->vbo;  
-        this->model3DLoader->vertices = other.model3DLoader->vertices;
-        this->model3DLoader->normals = other.model3DLoader->normals;
-        this->model3DLoader->texCords = other.model3DLoader->texCords;
-        this->model3DLoader->faces3 = other.model3DLoader->faces3;
-        this->model3DLoader->faces4 = other.model3DLoader->faces4;
-        this->model3DLoader->vertexCount = other.model3DLoader->vertexCount;
-        this->model3DLoader->normalCount = other.model3DLoader->normalCount;
-        this->model3DLoader->texcoordCount = other.model3DLoader->texcoordCount;
-        this->model3DLoader->faceCount = other.model3DLoader->faceCount;
-        this->model3DLoader->modelSize = other.model3DLoader->modelSize;
-    }
+    this->texLoader = other.texLoader;
+    this->model3DLoader = other.model3DLoader;
  
-    // copy model properties
+    // Copy transform properties (unique per instance)
     this->rotation = other.rotation;
     this->position = other.position;
     this->scale = other.scale;
@@ -47,6 +25,7 @@ _model::_model(const _model& other)
     this->enabled = other.enabled;
     this->currentModel = other.currentModel;
     
+    // Copy bounding boxes
     for (int i = 0; i < other.boundingBoxes.size(); i++) {
         this->boundingBoxes.push_back(other.boundingBoxes[i]);
     }
@@ -55,22 +34,28 @@ _model::_model(const _model& other)
 _model::~_model()
 {
     //dtor
-    delete texLoader;
-    delete model3DLoader;
+    if (ownsResources) {
+        delete texLoader;
+        delete model3DLoader;
+        texLoader = nullptr;
+        model3DLoader = nullptr;
+    }
 }
 void _model::drawModel()
 {
     if (!enabled) { return; }   // skip drawing if not enabled
+    GLfloat currentColor[4];
+    glGetFloatv(GL_CURRENT_COLOR, currentColor); // save current color
     glPushMatrix();          
         glColor3f(color.r, color.g, color.b);             //set colors
 
-        glTranslated(position.x,position.y,position.z); //translation
+        glTranslated(position.x,position.y,position.z); 
 
-        glRotated(rotation.x,1,0,0);     //rotate around X-Axis
-        glRotated(rotation.y,0,1,0);     //rotate around Y-Axis
-        glRotated(rotation.z,0,0,1);     //rotate around Z-Axis
+        glRotated(rotation.x,1,0,0);     
+        glRotated(rotation.y,0,1,0);     
+        glRotated(rotation.z,0,0,1);    
 
-        glScaled(scale.x,scale.y,scale.z);  // Scale your model
+        glScaled(scale.x,scale.y,scale.z);  
 
         texLoader->bindTexture();     // load teaxture onto given mode;
         switch (currentModel) {
@@ -93,7 +78,8 @@ void _model::drawModel()
                 glutSolidTeapot(1.0);
                 break;
         }
-    glPopMatrix();                 
+    glPopMatrix();
+    glColor4fv(currentColor);                 
 }
 
 void _model::initModel(char* texPath, char* modelPath, modelType currentModel)
