@@ -1,5 +1,5 @@
 #include "_helpMenu.h"
-
+#include "_textureloader.h"
 _helpMenu::_helpMenu(int width, int height)
 {
      //ctor

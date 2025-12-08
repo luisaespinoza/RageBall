@@ -2,8 +2,8 @@
 #define _HELPMENU_H
 
 #include <_common.h>
-#include <_textureloader.h>
-
+// #include <_textureloader.h>
+class _textureLoader;
 struct buttonHelp
 {
     int x, y, w, h;
@@ -27,7 +27,7 @@ class _helpMenu
     protected:
 
     private:
-        _textureloader myTex;
+        // _textureloader myTex;
         GLuint backgroundTex = 0;
 };
 
