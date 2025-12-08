@@ -24,17 +24,17 @@ _sceneManager::_sceneManager()
         return L;
     });
 
-    // Boot into main menu with a default level id so first Start works
-this->setCurrentScene(std::make_unique<_menuScene>(
-    /* onStart */ [this](const std::string& lvl){ this->setCurrentLevel(lvl); },
-    /* onHelp  */ [this]{
-        this->pushScene(std::make_unique<HelpScene>(
-            /* onClose */ [this]{ this->popScene(); }
-        ));
-    },
-    /* onQuit  */ [this]{ PostQuitMessage(0); },
-    "level01"
-));
+//     // Boot into main menu with a default level id so first Start works
+// this->setCurrentScene(std::make_unique<_menuScene>(
+//     /* onStart */ [this](const std::string& lvl){ this->setCurrentLevel(lvl); },
+//     /* onHelp  */ [this]{
+//         this->pushScene(std::make_unique<HelpScene>(
+//             /* onClose */ [this]{ this->popScene(); }
+//         ));
+//     },
+//     /* onQuit  */ [this]{ PostQuitMessage(0); },
+//     "level01"
+// ));/
 }
 
 _sceneManager::~_sceneManager()
@@ -94,12 +94,18 @@ void _sceneManager::updateActiveScene(double dt)
     const bool escPressedEdge = (s & 1) != 0;   // low bit set => key transitioned since last call
 
     if (escPressedEdge) {
-        if (isTopInGameMenu()) {
-          //  std::cout << "[mgr] ESC -> resumeFromInGameMenu()\n";
-            resumeFromInGameMenu();                 // no onEnter()
-        } else {
-           // std::cout << "[mgr] ESC -> showInGameMenu()\n";
-            showInGameMenu();                       // switch to _menuScene (IGM)
+        // if (isTopInGameMenu()) {
+        //   //  std::cout << "[mgr] ESC -> resumeFromInGameMenu()\n";
+        //     resumeFromInGameMenu();                 // no onEnter()
+        // } else {
+        //    // std::cout << "[mgr] ESC -> showInGameMenu()\n";
+        //     showInGameMenu();                       // switch to _menuScene (IGM)
+        // }
+        if (!sceneStack_.empty()) {
+            if (!isTopInGameMenu())
+            {
+                showInGameMenu();                       // switch to _menuScene (IGM)
+            }
         }
     }
 
@@ -338,11 +344,14 @@ auto menu = std::make_unique<_menuScene>(
             clearAllScenes();
             this->setCurrentScene(std::make_unique<_menuScene>(
                 /* onStart */ [this](const std::string& lvl){ this->post([this,lvl]{ this->setCurrentLevel(lvl); }); },
-                /* onHelp  */ [this]{
-                    this->pushScene(std::make_unique<HelpScene>(
-                        /* onClose */ [this]{ this->popScene(); }
-                    ));
+                // /* onHelp  */ [this]{
+                //     this->pushScene(std::make_unique<HelpScene>(
+                //         /* onClose */ [this]{ this->popScene(); }
+                //     ));
+                /* onHelp     */ [this]{
+                    this->showHelpOverlay(); // calls pushScene(<_help>)
                 },
+
                 /* onQuit  */ [this]{ PostQuitMessage(0); },
                 "level01"
             ));
@@ -388,3 +397,10 @@ bool _sceneManager::isTopInGameMenu() const
 //  return 0;
 //}
 
+
+void _sceneManager::bootMainMenu(const string& firstLevelId)
+{
+        auto start = [this](const std::string& levelId) { ... };
+        ...
+        setCurrentScene(std::make_unique<_menuScene>( ... ));
+    }

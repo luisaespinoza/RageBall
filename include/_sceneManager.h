@@ -73,6 +73,7 @@ class _sceneManager
             void togglePauseOverlay();
         void clearAllScenes();
         void setCurrentSceneNoEnter(std::unique_ptr<_SceneInterface> newScene);
+        void bootMainMenu(const std::string& firstLevelId = "level01");
         _light globalLight;
         bool escWasDown_ = false;
         bool suppressEnterNext_ = false;
