@@ -1191,7 +1191,7 @@ void _level01::spawnArenaEnemies_() {
         e->windupTime  = 0.25f;
 
         e->preferredMin = 2.5f;   // they only back off if they’re *really* close
-        e->preferredMax = 6.0f;   // they start pushing in when farther than this
+        e->preferredMax = 8.0f;   // they start pushing in when farther than this
 
         e->strafeSpeed  = 1.2f;
         e->dangerRadius = 1.2f;
