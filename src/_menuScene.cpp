@@ -313,8 +313,7 @@ void _menuScene::spawnBullet() {
     if (mode == Mode::InGameMenu) {
         eye = { 0.0f, -10.0f, 5.0f };   // pulled forward in Z and less extreme in Y
     } else {
-        // eye = { 0.0f, -10.0f, -10.0f };
-        eye = {menuModel.pos.x, menuModel.pos.y -10.0f, menuModel.pos.z -10.0f};
+        eye = { 0.0f, -10.0f, -10.0f };
     }
 
     vec3 hit { static_cast<float>(msX), static_cast<float>(msY), static_cast<float>(msZ) };
@@ -324,7 +323,7 @@ void _menuScene::spawnBullet() {
     if (len < 1e-5f) return;
     dir.x/=len; dir.y/=len; dir.z/=len;
 
-    ctx.bullet->src  = {menuModel.pos.x, menuModel.pos.y, menuModel.pos.z}; // from camera eye
+    ctx.bullet->src  = eye;
     ctx.bullet->des  = { hit.x, hit.y, hit.z }; // straight to unprojected point
     ctx.bullet->pos  = ctx.bullet->src;
     ctx.bullet->t    = 0.0f;
