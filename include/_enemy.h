@@ -216,11 +216,6 @@ public:
             }
         }
 
-        // ---- Move & clamp using SPACE HELPERS ----
-        vec3 pL = space.toLocal(position);
-        vec3 w0 = space.toWorld(pL);
-        vec3 w1 = space.toWorld({ pL.x + vL.x, pL.y + vL.y, pL.z + vL.z });
-        vec3 vW{ w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
 
                 // ---- Move & clamp using SPACE HELPERS ----
         // Convert the local intent to a world delta via the space transform
