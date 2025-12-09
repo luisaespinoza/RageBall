@@ -45,8 +45,8 @@ public:
     float fovDeg       = 120.f;
     float throwPeriod  = 1.4f;
     float windupTime   = 0.25f;
-    float preferredMin = 7.0f;
-    float preferredMax = 12.0f;
+    float preferredMin = 6.0f;
+    float preferredMax = 16.0f;
     float strafeSpeed  = 1.2f;
     float dangerRadius = 1.2f;
     // runtime
