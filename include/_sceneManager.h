@@ -4,6 +4,8 @@
 #include<_light.h>
 #include<_menuScene.h>
 #include<_scene.h>
+#include<_level00.h>
+#include<_level01.h>
 #include<_landingPage.h>
 
 using LevelFactory = std::function<std::unique_ptr<ILevel>()>;

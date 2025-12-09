@@ -13,29 +13,7 @@ _inputs::~_inputs()
 }
 void _inputs::keyPressed(_model* mdl)
 {
-     switch(wParam)
-     {
-     case VK_LEFT:
-        mdl->rotateY +=1.0;
-        break;
-     case VK_RIGHT:
-         mdl->rotateY -=1.0;
-        break;
 
-     case VK_UP:
-        mdl->rotateX +=1.0;
-        break;
-     case VK_DOWN:
-        mdl->rotateX -=1.0;
-        break;
-
-       case VK_ADD:
-        mdl->rotateZ +=1.0;
-        break;
-     case VK_SUBTRACT:
-         mdl->rotateZ -=1.0;
-        break;
-     }
 }
 
 void _inputs::keyPressed(_parallax* prlx)
@@ -233,23 +211,10 @@ void _inputs::mouseEventUp()
 
 void _inputs::mouseWheel(_model* mdl, double delta)
 {
-    mdl->posZ +=delta/100.0;    // zoom the model when wheel in action
 }
 
 void _inputs::mouseMove(_model* mdl, double x, double y)
 {
-     if(isRotationActive)                   // if rotation
-     {
-         mdl->rotateY +=(x-prev_MouseX)/3.0; // around y axis
-         mdl->rotateX +=(y-prev_MouseY)/3.0; // around x axis
-     }
-     if(isTranslateActive)                   //if Translate
-     {
-         mdl->posX +=(x-prev_MouseX)/100.0;  // change x pos
-         mdl->posY -=(y-prev_MouseY)/100.0;  // change y pos
-     }
-
-    prev_MouseX = x;                         // reset mouse x
-    prev_MouseY = y;                         // reset mouse y
+                   // reset mouse y
 }
 
