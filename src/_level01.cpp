@@ -565,7 +565,10 @@ void _level01::update(double dt)
 
     if (useArena) {
         // --- LOCAL velocity ---
-        const float step = player->speed * (float)dt;
+        // const float step = player->speed * (float)dt;
+        float dtf = static_cast<float>(dt);
+        e->stateT += dtf;
+
         vec3 vL { str * step, 0.0f, -fwd * step };
 
         // recompute local pos in arena, convert delta via two points (like halls)
@@ -575,7 +578,7 @@ void _level01::update(double dt)
         vec3 vW { w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
 
         // move & clamp inside arena
-        player->moveAndClamp(dt, vW, arena_);  // same template you used with halls
+        player->moveAndClamp(dtf, vW, arena_);  // same template you used with halls
 
         // ------------- Obstacle collisions (same sphere test) -------------
         auto sqr = [](float v){ return v*v; };
@@ -592,7 +595,7 @@ void _level01::update(double dt)
             if (!e->makeTrajectory) e->makeTrajectory = [] { return Trajectory_Parabola(3.0f); };
 
             // Brain/body update in Arena space (movement+clamp happens inside)
-            e->updateAI(dt, arena_);
+            e->updateAI(dtf, arena_);
             if (!player) continue;
 
             // Work in arena-local space so the math matches your conventions:
@@ -608,7 +611,7 @@ void _level01::update(double dt)
             }
         }
         if (player->hurtCooldown > 0.0f)
-            player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
+            player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dtf));
 
         if (player->hurtCooldown <= 0.f) {
             bool tookHit = false;
@@ -641,7 +644,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
     if (!e) continue;
 
     // reuse stateT as a simple oscillator timer
-    e->stateT += static_cast<float>(dt);
+    e->stateT += static_cast<float>(dtf);
 
     // Local positions
     vec3 eL = arena_.toLocal(e->position);
@@ -658,15 +661,22 @@ for (size_t i = 0; i < enemies.size(); ++i) {
         toP = {0.0f, 0.0f, -1.0f};
     }
 
-    // Tangent (strafe) direction: rotate toP 90° around Y
+    // Tangent strafe (left/right) and spacing
     vec3 tanL{ toP.z, 0.0f, -toP.x };
 
-    // --- Keep a preferred distance band around the player ---
-    const float preferredMin = 7.0f;
-    const float preferredMax = 12.0f;
-    float radialMag = 0.0f;
-    if (L < preferredMin)      radialMag = -0.4f; // too close → move away from player
-    else if (L > preferredMax) radialMag = +0.4f; // too far   → move toward player
+    float preferredMin = e->preferredMin;
+    float preferredMax = e->preferredMax;
+
+    // safety: if tuning ever gets weird
+    if (preferredMin <= 0.0f || preferredMax <= preferredMin) {
+        preferredMin = 6.0f;
+        preferredMax = 10.0f;
+    }
+
+    float radial = 0.0f;
+    if (L < preferredMin)      radial = +0.4f;  // back away in Z
+    else if (L > preferredMax) radial = -0.4f;  // step forward in Z
+
 
     // --- Sideways oscillation for circling behavior ---
     float s = std::sin(1.2f * e->stateT + static_cast<float>(i) * 1.1f);
@@ -680,8 +690,8 @@ for (size_t i = 0; i < enemies.size(); ++i) {
     };
 
     // Scale by enemy speed and dt
-    stepL.x *= e->speed * static_cast<float>(dt);
-    stepL.z *= e->speed * static_cast<float>(dt);
+    stepL.x *= e->speed * static_cast<float>(dtf);
+    stepL.z *= e->speed * static_cast<float>(dtf);
 
     // Apply in local space, clamp to enemy half, then convert back to world
     vec3 eL_new{ eL.x + stepL.x, eL.y, eL.z + stepL.z };
@@ -746,7 +756,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
 
         player->setAnimForVelocity(vW);
-        player->updateBall(dt);
+        player->updateBall(dtf);
         return;
     }
 
@@ -777,7 +787,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
         vec3 pL = H.toLocal(player->position);
 
         // --- 2) Compute LOCAL velocity then convert to WORLD as a delta of transformed points ---
-        const float step = player->speed * (float)dt;
+        const float step = player->speed * (float)dtf;
 
         // local forward is -Z, strafe is +X
         vec3 vL = { str * step, 0.0f, -fwd * step };
@@ -789,7 +799,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
 
         // --- 3) Move & clamp inside THIS hallway ---
-        player->moveAndClamp(dt, vW, H);
+        player->moveAndClamp(dtf, vW, H);
 
 
             // ------------- Collision with obstacles -------------
@@ -803,7 +813,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
         // tick down hurt cooldown
     if (player->hurtCooldown > 0.0f)
-        player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
+        player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dtf));
 
         // Only check for damage if not invincible
         if (player->hurtCooldown <= 0.f) {
@@ -875,7 +885,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
 // (Optional) animation from motion
     player->setAnimForVelocity(vW);
-    player->updateBall(dt);
+    player->updateBall(dtf);
 
 }
 
@@ -1177,8 +1187,8 @@ void _level01::spawnArenaEnemies_() {
         e->throwPeriod = 1.6f;
         e->windupTime  = 0.25f;
 
-        e->preferredMin = 7.0f;
-        e->preferredMax = 12.0f;
+        e->preferredMin = 5.0f;
+        e->preferredMax = 8.0f;
         e->strafeSpeed  = 1.2f;
         e->dangerRadius = 1.2f;
 
