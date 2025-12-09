@@ -1234,7 +1234,7 @@ void _level01::spawnArenaEnemies_() {
         e->dangerRadius = 1.2f;
         // after creating e
         float t01 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        e->stateT = t01 * 0.5f;   // random initial state timer offset (up to 0.5s)
+        e->stateT = t01 * 0.5f + 10.0f;   // random initial state timer offset (up to 0.5s)
 
         enemies.emplace_back(std::move(e));
     }
