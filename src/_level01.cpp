@@ -816,7 +816,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
         // tick down hurt cooldown
     if (player->hurtCooldown > 0.0f)
-        player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dtf));
+        player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
 
         // Only check for damage if not invincible
         if (player->hurtCooldown <= 0.f) {
