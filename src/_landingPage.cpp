@@ -5,7 +5,7 @@ namespace {
 
     // measured from TOP-LEFT in the art:
     constexpr int BTN_X_TOP = 105;
-    constexpr int BTN_Y_TOP = 375;
+    constexpr int BTN_Y_TOP = 475;
     constexpr int BTN_W     = 482;
     constexpr int BTN_H     = 114;
 
