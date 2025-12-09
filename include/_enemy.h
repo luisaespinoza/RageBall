@@ -191,6 +191,7 @@ public:
         vec3 pL = space.toLocal(position);
         pL = space.clampLocal(pL, radius);
         position = space.toWorld(pL);
+        Character::position = position;
 
         // tick projectile
         ball.bulletActions(dt);
