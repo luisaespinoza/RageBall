@@ -197,8 +197,8 @@ public:
 
                 // 6) Go to cooldown
                 // choose random cooldown between min and max
-                cooldownTarget = cooldownMin + static_cast<float>(rand()) / RAND_MAX * (cooldownMax - cooldownMin);
-                state  = State::Cooldown;
+                float t01 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX); // [0,1]
+                cooldownTarget = cooldownMin + t01 * (cooldownMax - cooldownMin);                state  = State::Cooldown;
                 stateT = 0.f;
             }
             vW = {0,0,0};
@@ -206,11 +206,14 @@ public:
 
 
             case State::Cooldown:
-                vW = {0,0,0};
-                if (stateT >= throwPeriod) {
-                    state  = State::Windup;
-                    stateT = 0.f;
+                stateT += dt;
+
+                if (stateT >= cooldownTarget) {
+                    state  = State::Chase;   // or Patrol, whatever you want next
+                    stateT = 0.0f;
                 }
+
+                vW = {0,0,0}; // no movement during cooldown (for now)
                 break;
 
             case State::Stunned:
