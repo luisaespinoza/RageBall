@@ -6,6 +6,7 @@
 #include <_spatialNav.h>
 #include "_character.h"
 #include<_3dmodelloader.h>
+#include<_player.h>
 template <typename T>
 inline const T& clamp(const T& v, const T& lo, const T& hi) {
     return (v < lo) ? lo : (v > hi ? hi : v);
@@ -35,7 +36,8 @@ public:
     void setAnimForVelocity(const vec3& vW) override;
 
     // dependencies
-    const Character* target = nullptr;
+    // const Character* target = nullptr;
+    const Player* target = nullptr;
     std::function<_bullets::TrajectoryFn()> makeTrajectory = nullptr;
 
     // tuning
@@ -147,6 +149,79 @@ public:
             vL = {0,0,0};
             break;
         }
+                // --- DODGE INCOMING PLAYER BALL (simple evasion) ---
+        if (target && target->ball && target->ball->live) {
+            const _bullets* b = target->ball;
+
+            // Ball world direction on XZ
+            vec3 dirW{ b->dir.x, 0.f, b->dir.z };
+            float dirLen = std::sqrt(dirW.x*dirW.x + dirW.z*dirW.z);
+            if (dirLen > 1e-6f) {
+                dirW.x /= dirLen;
+                dirW.z /= dirLen;
+
+                // Vector from ball to enemy on XZ
+                vec3 toEnemy{ position.x - b->pos.x, 0.f, position.z - b->pos.z };
+
+                // Distance along ray
+                float ahead = toEnemy.x*dirW.x + toEnemy.z*dirW.z;
+
+                // Perpendicular distance to the ball path
+                vec3 closest{
+                    dirW.x * ahead,
+                    0.f,
+                    dirW.z * ahead
+                };
+                vec3 offset{
+                    toEnemy.x - closest.x,
+                    0.f,
+                    toEnemy.z - closest.z
+                };
+                float distToLine = std::sqrt(offset.x*offset.x + offset.z*offset.z);
+
+                float safeRadius = dangerRadius + b->radius + 0.5f * radius;
+
+                // If we are in front of the ball and close to its path, strafe
+                if (ahead > 0.f && distToLine < safeRadius) {
+                    // World-space strafe direction (perpendicular to ball path)
+                    vec3 strafeW{ -dirW.z, 0.f, dirW.x };
+
+                    // Flip so we move away from the path
+                    float side = (offset.x*strafeW.x + offset.z*strafeW.z) >= 0.f ? 1.f : -1.f;
+                    strafeW.x *= side;
+                    strafeW.z *= side;
+
+                    // Map this to local space to keep using vL
+                    vec3 pL = space.toLocal(position);
+                    vec3 qL = space.toLocal(vec3{
+                        position.x + strafeW.x,
+                        position.y,
+                        position.z + strafeW.z
+                    });
+                    vec3 strafeL{
+                        qL.x - pL.x,
+                        0.f,
+                        qL.z - pL.z
+                    };
+                    float sLen = std::sqrt(strafeL.x*strafeL.x + strafeL.z*strafeL.z);
+                    if (sLen > 1e-6f) {
+                        strafeL.x /= sLen;
+                        strafeL.z /= sLen;
+
+                        // Add dodge component to our local velocity
+                        vL.x += strafeL.x * strafeSpeed * (float)dt;
+                        vL.z += strafeL.z * strafeSpeed * (float)dt;
+                    }
+                }
+            }
+        }
+
+        // ---- Move & clamp using SPACE HELPERS ----
+        vec3 pL = space.toLocal(position);
+        vec3 w0 = space.toWorld(pL);
+        vec3 w1 = space.toWorld({ pL.x + vL.x, pL.y + vL.y, pL.z + vL.z });
+        vec3 vW{ w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
+
                 // ---- Move & clamp using SPACE HELPERS ----
         // Convert the local intent to a world delta via the space transform
         vec3 pL = space.toLocal(position);
