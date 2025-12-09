@@ -13,6 +13,7 @@ namespace {
     constexpr float kMainMenuCubeEdge  = 2.0f;  // matches menuRender()
     constexpr float kPauseMenuCubeEdge = 1.6f;  // matches pause mode in menuRender()
     constexpr float kHitPadding        = 0.5f;  // inflate hit volume beyond cube edge
+    constexpr float kMenuBulletRadius = 1.0f;
 }
 
 static bool gSkyLoaded = false;
@@ -173,7 +174,8 @@ void _menuScene::menuUpdate(double dt) {
     ctx.bullet->bulletActions(dt);
     if (!ctx.bullet->live) return;
 
-    constexpr float kBulletRadius = 0.5f;
+
+    (ctx.bullet->radius > 0.0f) ? ctx.bullet->radius : kMenuBulletRadius;
     for (const auto& block : *ctx.blocks) {
         bool hit = ctx.collision->isSphereCol(
             ctx.bullet->pos, block.centerPosition,
