@@ -1,13 +1,23 @@
 #include "_landingPage.h"
 namespace {
-    // “design resolution” used for the button math
     constexpr int BASE_W = 3840;
     constexpr int BASE_H = 2160;
 
-    // button rect in that base resolutio
-    // constexpr buttonPage BASE_BTN_ENTER = { 70, 332, 325, 78 };
-    constexpr buttonPage BASE_BTN_ENTER = { 89, 525, 482, 114 };
+    // measured from TOP-LEFT in the art:
+    constexpr int BTN_X_TOP = 89;
+    constexpr int BTN_Y_TOP = 525;
+    constexpr int BTN_W     = 482;
+    constexpr int BTN_H     = 114;
+
+    // converted to BOTTOM-LEFT for OpenGL:
+    constexpr buttonPage BASE_BTN_ENTER = {
+        BTN_X_TOP,
+        BASE_H - (BTN_Y_TOP + BTN_H),
+        BTN_W,
+        BTN_H
+    };
 }
+
 _landingPage::_landingPage(int width, int height)
 {
      //ctor
@@ -117,10 +127,14 @@ void _landingPage::orthoEnd()
     // glPopMatrix();
     // glMatrixMode(GL_MODELVIEW);
     // glEnable(GL_DEPTH_TEST);
+
+    //minor issue we traverse the stack top down
+    //so we need to switch to modelview first
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+    glEnable(GL_DEPTH_TEST);
 }
 
 void _landingPage::updateLayout()
