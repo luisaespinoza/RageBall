@@ -303,7 +303,13 @@ void _menuScene::spawnBullet() {
     // Aim from camera eye -> world point under cursor (msX, msY, msZ)
     //vec3 eye { ctx.camera->eye.x, ctx.camera->eye.y, ctx.camera->eye.z };
     //from the model. like he is throwing it at it.
-    vec3 eye { 0.0f,-10.0f,-10.0f };
+    vec3 eye;
+    if (mode == Mode::InGameMenu) {
+        eye = { 0.0f, -10.0f, 5.0f };   // pulled forward in Z and less extreme in Y
+    } else {
+        eye = { 0.0f, -10.0f, -10.0f };
+    }
+
     vec3 hit { static_cast<float>(msX), static_cast<float>(msY), static_cast<float>(msZ) };
 
     vec3 dir { hit.x - eye.x, hit.y - eye.y, hit.z - eye.z };
