@@ -836,39 +836,54 @@ void _level01::update(double dt)
             return (sqr(dx) + sqr(dy) + sqr(dz)) <= (r*r);
         };
 
-        // tick down hurt cooldown
     if (player->hurtCooldown > 0.0f)
         player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
 
-        // Only check for damage if not invincible
-        if (player->hurtCooldown <= 0.f) {
-            bool tookHit = false;
+    if (player->hurtCooldown <= 0.f) {
+        bool tookHit = false;
 
-            // Iterate all halls and their obstacles in the current level
-            for (const auto& hall : halls) {
-                hall.forEachObstacleWorld([&](float ox, float oy, float oz, float radius){
-                    if (!tookHit && hitSphere(player->position.x, player->position.y, player->position.z, player->radius,
-                                              ox, oy, oz, radius)) {
-                        tookHit = true;
-                    }
-                });
-                if (tookHit) break;
-            }
+        // 1) Enemy projectiles → Player
+        for (auto& e : enemies) {
+            if (!e) continue;
+            if (!e->ball.live) continue;
 
-            if (tookHit) {
-                player->life -= 1;
-                player->hurtCooldown = 1.0f;   // 1 second invulnerability to avoid rapid multi-hit
-
-                // optional: print or flash UI
-                std::cout << "[player] hit! life=" << player->life << "\n";
-
-                if (player->life <= 0) {
-                    // ---- RESET THE LEVEL ----
-                   this->reset();            // see #4 below
-                    return;                   // bail out of this frame's update
-                }
+            // simple sphere–sphere test using your collisionChecker
+            if (collisionChecker->isSphereCol(
+                    e->ball.pos,        // enemy bullet position
+                    player->position,   // player position
+                    e->ball.radius,     // enemy bullet radius
+                    player->radius,     // player radius
+                    0.0f))              // extra padding
+            {
+                tookHit = true;
+                e->ball.live = false;  // consume projectile
+                std::cout << "[player] hit by enemy ball\n";
+                break;                 // only one hit per frame
             }
         }
+
+        // 2) Arena obstacles → Player (only if not already hit by a ball)
+        if (!tookHit) {
+            arena_.forEachObstacleWorld([&](float ox, float oy, float oz, float radius){
+                if (!tookHit && hitSphere(player->position.x, player->position.y, player->position.z, player->radius,
+                                          ox, oy, oz, radius)) {
+                    tookHit = true;
+                }
+            });
+        }
+
+        // 3) Apply damage once
+        if (tookHit) {
+            player->life -= 1;
+            player->hurtCooldown = 1.0f;
+            std::cout << "[player] life now = " << player->life << "\n";
+            if (player->life <= 0) {
+                this->reset();
+                return;
+            }
+        }
+    }
+
 // --- 4) Absolute facing: steer toward movement direction (world space) ---
     float faceYawWorld = player->yawDeg;
     const float mv2 = vL.x*vL.x + vL.z*vL.z;

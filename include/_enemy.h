@@ -138,8 +138,9 @@ public:
                 break;
 
             case State::Throw:
-                std::cout << "[Enemy] THROW from stateT=" << stateT
-          << " dist=" << distToTarget << std::endl;
+                std::cout << "[Enemy] spawn ball live=" << ball.live
+                          << " pos=(" << ball.pos.x << "," << ball.pos.y << "," << ball.pos.z << ")"
+                          << " r=" << ball.radius << "\n";
 
                 if (target) {
                     // aim at chest
