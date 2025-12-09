@@ -175,7 +175,7 @@ void _menuScene::menuUpdate(double dt) {
     if (!ctx.bullet->live) return;
 
 
-    (ctx.bullet->radius > 0.0f) ? ctx.bullet->radius : kMenuBulletRadius;
+    kBulletRadius=(ctx.bullet->radius > 0.0f) ? ctx.bullet->radius : kMenuBulletRadius;
     for (const auto& block : *ctx.blocks) {
         bool hit = ctx.collision->isSphereCol(
             ctx.bullet->pos, block.centerPosition,
