@@ -1,15 +1,19 @@
 #include "_model.h"
-
+int _model::nextModelId = 0;
 _model::_model()
 {
     //ctor
+    modelId = nextModelId++;
     ownsResources = true; // single instance owns resources
     texLoader = new _textureLoader();
     model3DLoader = new _objLoader();
+
+
 }
 
 _model::_model(const _model& other)
 {    
+    modelId = nextModelId++;
     ownsResources = false; // copies do not own resources
     // copy texture
     this->texLoader = other.texLoader;
@@ -89,7 +93,7 @@ void _model::initModel(char* texPath, char* modelPath, modelType currentModel)
     if (currentModel == CUSTOM) {
         model3DLoader->initObj(modelPath);
         model3DLoader->buildBuffer();
-        model3DLoader->debug();
+        //model3DLoader->debug();
     }
     enabled = true;
 }

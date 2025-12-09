@@ -5,6 +5,7 @@
 #include<_textureloader.h>
 #include<_objloader.h>
 #include<_boundingBox.h>
+
 class _model
 {
     public:
@@ -34,7 +35,7 @@ class _model
         enum modelType {TEAPOT, TORUS, CUBE, SPHERE, CUSTOM};
         modelType currentModel;
         int modelId;
-        
+
         // Initialize model with texture + model
         void initModel(char* texPath, char* modelPath, modelType currentModel);
         // Initialize model with texture only (primitive model ONLY)
@@ -55,6 +56,7 @@ class _model
     protected:
 
     private:
+        static int nextModelId;
 };
 
 #endif // _MODEL_H

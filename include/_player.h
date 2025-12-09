@@ -53,7 +53,7 @@ struct Player : public Character {
         // timers
         animationTimer->reset();
         // main model
-        playerModel->initModel("images/chud.jpg", "models/player.obj", _model::CUSTOM);
+        playerModel->initModel("", "models/player.obj", _model::CUSTOM);
         playerModel->enabled = true;
         playerModel->scale = vec_scale;
         // ball
@@ -62,8 +62,8 @@ struct Player : public Character {
         // collision
         //collisionBox->initBoundingBox({0.7f, 2.0f, 0.7f}, (position+collisionBoxOffset), size);
         // animations
-        walk_body_animation->initAnimation("images/chud.jpg", "models/animations/Walk_Forward/Body/Walk_Forward", 24, 28, 12, playerModel->scale);
-        walk_arm_animation->initAnimation("images/chud.jpg", "models/animations/Walk_Forward/RightArm/Walk_Forward", 24, 28, 12, playerModel->scale);
+        walk_body_animation->initAnimation("", "models/animations/Walk_Forward/Body/Walk_Forward", 24, 28, 12, playerModel->scale);
+        walk_arm_animation->initAnimation("", "models/animations/Walk_Forward/RightArm/Walk_Forward", 24, 28, 12, playerModel->scale);
         walk_ball_animation->initAnimation("images/dodgeball.jpg", "models/animations/Walk_Forward/Ball/Walk_Forward", 24, 28, 12, playerModel->scale);
     }
     void drawPlayer()

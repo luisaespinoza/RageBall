@@ -372,6 +372,7 @@ int WINAPI WinMain(
 char cwd[MAX_PATH];
 _getcwd(cwd, MAX_PATH);
 RNG::init();
+
 std::cout << "CWD: " << cwd << std::endl;
 
 	// Ask The User Which Screen Mode They Prefer

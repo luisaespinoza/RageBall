@@ -3,6 +3,7 @@
 
 #include "_model.h"
 #include <_timerPlusPlus.h>
+#include <_animation.h>
 
 // State of the target for hit detection
 enum TargetState { ACTIVE, HIT, DEAD };
@@ -49,6 +50,46 @@ class _balls : public _model {
 
     protected:
     private:
+};
+
+// Simple "enemy" that throws balls at the player -- doesn't really have an AI. Could use its own file but easier to just place here.
+class _thrower : public _model {
+    public:
+        _thrower();
+        _thrower(const _thrower& other);    // copy constructor
+        virtual ~_thrower();
+        void initThrower();
+        virtual void drawModel() override;
+        void updateModel(double dt);
+        // Applies damage effect
+        void hitThrower(int modelId);
+
+        enum ThrowerAnimationStates { IDLE, PREPARE, THROW, RESET };
+        enum ThrowerExistenceStates { ALIVE, DAMAGE, DYING, DEAD };
+
+        ThrowerAnimationStates currentState = IDLE;
+        ThrowerExistenceStates existenceState = ALIVE;
+
+
+        int health = 1;
+        float leftBound = -12.5f;
+        float rightBound = 12.5f;
+        float speed = 0; // speed at which target moves
+        int direction = 0; // direction of movement: 1 = right, -1 = left
+        float deathLength = 2.0; // Length enemy exists in HIT animation prior to death (seconds)
+        float throwInterval = 7.0f; // seconds between throws
+    protected:
+    private:
+        _timerPlusPlus* stateTimer = nullptr;
+        _timerPlusPlus* hitTimer = nullptr;
+        _timerPlusPlus* deathTimer = nullptr;
+
+        _animation* throw_animation = nullptr;
+        _animation* reset_animation = nullptr;
+        _animation* prep_animation = nullptr;
+
+        int lastHitIndex = -1; // each model has a uniquie model id, this checks the LAST collision to prevent multiple hits from same ball
+        int currentFrame = 0; // number of frames progressed in current animation -- for transitions
 };
 
 

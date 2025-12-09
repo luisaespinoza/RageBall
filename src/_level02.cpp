@@ -32,7 +32,7 @@ void _level02::loadAssets() {
     player->vec_scale = {0.15f, 0.15f, 0.15f};
     player->initPlayer();
     player->position = {0.0f, 4.0f, 25.0f};
-    playerHitBox->initBoundingBox({0.25f, 0.4f, 0.25f}, {player->position.x, player->position.y + 0.9f, player->position.z}, {1.0f, 1.0f, 1.0f});
+    playerHitBox->initBoundingBox({0.25f, 1.0f, 0.25f}, {player->position.x, player->position.y + 1.5f, player->position.z}, {1.0f, 1.0f, 1.0f});
     // ARENA MODELS INTI //
     // models
     main_court->initModel("images/arena/main_court.png","models/arena/main_court.obj", _model::CUSTOM);
@@ -56,6 +56,9 @@ void _level02::loadAssets() {
     // TARGETS INIT //
     targetPrototype = new _targets();
     targetPrototype->initModel("images/target/target.jpg", "models/target/target_main.obj", _model::CUSTOM);
+    // THROWERS INIT //
+    throwerPrototype = new _thrower();
+    throwerPrototype->initThrower();
     // CAMERA INIT//
     characterCamera->camInit();
     noclipCamera->camInit();
@@ -144,6 +147,13 @@ void _level02::handleKey(UINT uMsg, WPARAM wParam) {
             if (keyTimer->getTicks() > 300) {
                 cout << "Spawning a target!" << endl;
                 createTarget({0.0f, 2.0f, 0.0f}, 1.3f);
+                keyTimer->reset();
+            }
+            break;
+        case VK_DIVIDE:
+            if (keyTimer->getTicks() > 300) {
+                cout << "Spawning a thrower!" << endl;
+                createThrower({0.0f, 2.0f, 0.0f}, 1.3f, 1);
                 keyTimer->reset();
             }
             break;
@@ -364,7 +374,7 @@ void _level02::update(double dt) {
     player->position.y += playerVelocity.y * physicsDt; 
     player->position.z += playerVelocity.z * physicsDt;
     // update player hitbox
-    playerHitBox->position = {player->position.x, player->position.y, player->position.z};
+    playerHitBox->position = {player->position.x, player->position.y+0.5f, player->position.z};
     // update balls hitboxes
     // PHYSICS UPDATE - BALLS //
     for (int i = 0; i < balls.size(); i++) {
@@ -433,6 +443,27 @@ void _level02::update(double dt) {
             targets.erase(targets.begin() + i);
         }
     }
+    // THROWER UPDATES //
+    for (int i = 0; i < throwers.size(); i++) {
+        // movement
+        throwers[i]->updateModel(physicsDt);
+        // collison check
+        for (int j = 0; j < balls.size(); j++) {
+            if (throwers[i]->isCollidingWith(balls[j]->boundingBoxes[0])) {
+                throwers[i]->hitThrower(balls[j]->modelId);
+                break;
+            }
+        }
+        // move collison box
+        throwers[i]->boundingBoxes[0].position = throwers[i]->position;
+    }
+    // THROWER DELETION //
+    for (int i = throwers.size()-1; i >=0 ; i--) {   
+        if (throwers[i]->existenceState == _thrower::DEAD) {
+            delete throwers[i];
+            throwers.erase(throwers.begin() + i);
+        }
+    }
     physicsTimer->reset();
     // DIRECTOR HANDLING //
     if (directorTimer->getTicks() >= 5000) { // every 5 seconds
@@ -470,6 +501,9 @@ void _level02::render(const RenderFlags& flags) {
         for (int i = 0; i < targets.size(); i++) {
             targets[i]->displayBoundingBoxes();
         }
+        for (int i = 0; i < throwers.size(); i++) {
+            throwers[i]->displayBoundingBoxes();
+        }
     }
     if (showMapModels) {
         player->drawPlayer();      
@@ -484,6 +518,9 @@ void _level02::render(const RenderFlags& flags) {
         }
         for (int i = 0; i < targets.size(); i++) {
             targets[i]->drawModel();
+        }
+        for (int i = 0; i < throwers.size(); i++) {
+            throwers[i]->drawModel();
         }
     }
 }
@@ -548,5 +585,16 @@ void _level02::createTarget(vec3f position, float speed, int direction) {
     targets.push_back(newTarget);
 }
 
+void _level02::createThrower(vec3f position, float speed, int direction) {
+    _thrower* newThrower = new _thrower(*throwerPrototype); // copy prototype
+    newThrower->speed = speed;
+    newThrower->direction = direction;
+    newThrower->position = position;
 
+    newThrower->leftBound = -12.5f;
+    newThrower->rightBound = 12.5f;
+    newThrower->addBoundingBox({1.0f, 1.0f, 1.0f}, newThrower->position, newThrower->scale);
+    throwers.push_back(newThrower);
+    //newThrower->rotation.x = 90.0f;
+}
 

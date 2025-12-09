@@ -60,6 +60,7 @@ public:
     void createBall();
     // creates a target at a given position with a given speed
     void createTarget(vec3f position, float speed, int direction = 0); // direction: 1 = right, -1 = left, 0 = static
+    void createThrower(vec3f position, float speed, int direction = 0); // direction: 1 = right, -1 = left, 0 = static
 private:
     _camera* characterCamera = nullptr;
     _camera* noclipCamera = nullptr;
@@ -73,6 +74,9 @@ private:
     // target
     _targets* targetPrototype = nullptr;
     vector<_targets*> targets;
+    // throwers
+    _thrower* throwerPrototype = nullptr;
+    vector<_thrower*> throwers;
 
     Player* player = nullptr;
     _boundingBox* playerHitBox = nullptr;
@@ -97,6 +101,7 @@ private:
     _textureLoader* textureLoader = nullptr;
     int modelIdList = 0;
     int ballDeleteTime = 2500; // milliseconds before a ball is deleted
+
     // idk what any of this is
     std::string nextLevelId_;
     std::string levelPath_;
@@ -104,7 +109,7 @@ private:
     bool levelComplete = false;
  
     // DEBUG INFO //
-    int debugPrintInterval = 500; // milliseconds
+    int debugPrintInterval = 2000; // milliseconds
     bool showBoundingBoxes = true; // Toggle bounding box display for debugging
     bool showMapModels = true;     // Toggle map models display for debugging (good for checking bounding boxes)
     bool noclipEnabled = false;    // Toggle noclip mode for debugging
