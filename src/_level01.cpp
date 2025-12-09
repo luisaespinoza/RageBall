@@ -732,7 +732,29 @@ void _level01::update(double dt)
                 }
             }
         }
+        // --- Enemy bullets → Player collision ---
+        if (player->hurtCooldown <= 0.f) {      // only if not currently invincible
+            for (auto& e : enemies) {
+                if (!e) continue;
+                if (!e->ball.live) continue;    // this enemy has no active projectile
 
+                if (collisionChecker->isSphereCol(
+                        e->ball.pos,           // enemy projectile center
+                        player->position,      // player center
+                        e->ball.radius,        // enemy projectile radius
+                        player->radius,        // player collider radius
+                        0.0f))                 // extra padding
+                {
+                    player->life -= 1;
+                    player->hurtCooldown = 1.0f;    // 1 second i-frames
+                    e->ball.live = false;          // consume projectile
+
+                    std::cout << "[player] hit by enemy! life="
+                              << player->life << "\n";
+                    break; // only one hit per frame
+                }
+            }
+        }
         if (collisionChecker->isSphereCol(pickupItem->pos,player->position,pickupItem->pSize.x,player->radius,0.0f) && !pickupItem->isCollected) {
             pickupItem->applyEffect(player);
             healthRingEffectTimer.enabled = true;
