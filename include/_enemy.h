@@ -52,9 +52,9 @@ public:
     // runtime
     State state = State::Patrol;
     float stateT = 0.f;
-    float cooldownMin = 0.8f;   // minimum seconds before next attack
-    float cooldownMax = 1.6f;   // maximum seconds
-    float cooldownTarget = 1.0f; // chosen each time we enter Cooldown
+    float cooldownMin = 1.4f;   // minimum seconds before next attack
+    float cooldownMax = 4.6f;   // maximum seconds
+    float cooldownTarget = 2.0f; // chosen each time we enter Cooldown
 
 
     void render() override;
