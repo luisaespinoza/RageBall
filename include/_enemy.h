@@ -52,8 +52,8 @@ public:
     // runtime
     State state = State::Patrol;
     float stateT = 0.f;
-    float cooldownMin = 1.4f;   // minimum seconds before next attack
-    float cooldownMax = 4.6f;   // maximum seconds
+    float cooldownMin = 1.0f;   // minimum seconds before next attack
+    float cooldownMax = 5.0f;   // maximum seconds
     float cooldownTarget = 2.0f; // chosen each time we enter Cooldown
 
 
