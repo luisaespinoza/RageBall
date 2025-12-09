@@ -1,7 +1,7 @@
 #include "_landingPage.h"
 namespace {
-    constexpr int BASE_W = 3840;
-    constexpr int BASE_H = 2160;
+    constexpr int BASE_W = 1920;
+    constexpr int BASE_H = 1080;
 
     // measured from TOP-LEFT in the art:
     constexpr int BTN_X_TOP = 89;
