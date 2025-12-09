@@ -802,7 +802,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
 
         // --- 3) Move & clamp inside THIS hallway ---
-        player->moveAndClamp(dtf, vW, H);
+        player->moveAndClamp(dt, vW, H);
 
 
             // ------------- Collision with obstacles -------------
@@ -888,7 +888,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
 // (Optional) animation from motion
     player->setAnimForVelocity(vW);
-    player->updateBall(dtf);
+    player->updateBall(dt);
 
 }
 
