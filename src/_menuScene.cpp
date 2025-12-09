@@ -140,18 +140,18 @@ void _menuScene::enterPause() {
     const float blockRadius = halfEdge + kHitPadding;
 
     pauseBlocks = {
-        { {  0.0f,  3.0f, -12.0f }, blockRadius, MenuBlock::Type::Resume   },
-        { {  0.0f,  1.0f, -12.0f }, blockRadius, MenuBlock::Type::Help     },
-        { {  0.0f, -1.0f, -12.0f }, blockRadius, MenuBlock::Type::MainMenu },
-        { {  0.0f, -3.0f, -12.0f }, blockRadius, MenuBlock::Type::Quit     },
+        { {  0.0f,  3.0f, -14.0f }, blockRadius, MenuBlock::Type::Resume   },
+        { {  0.0f,  1.0f, -14.0f }, blockRadius, MenuBlock::Type::Help     },
+        { {  0.0f, -1.0f, -14.0f }, blockRadius, MenuBlock::Type::MainMenu },
+        { {  0.0f, -3.0f, -14.0f }, blockRadius, MenuBlock::Type::Quit     },
     };
 
-    // pauseBullet.actionTrigger = pauseBullet.READY;
-    // pauseBullet.live = false;
-    // pauseBullet.t = 0.0f;
-    menuBullet.actionTrigger = menuBullet.READY;
-    menuBullet.live = false;
-    menuBullet.t = 0.0f;
+    pauseBullet.actionTrigger = pauseBullet.READY;
+    pauseBullet.live = false;
+    pauseBullet.t = 0.0f;
+    // menuBullet.actionTrigger = menuBullet.READY;
+    // menuBullet.live = false;
+    // menuBullet.t = 0.0f;
 }
 
 
@@ -313,7 +313,8 @@ void _menuScene::spawnBullet() {
     if (mode == Mode::InGameMenu) {
         eye = { 0.0f, -10.0f, 5.0f };   // pulled forward in Z and less extreme in Y
     } else {
-        eye = { 0.0f, -10.0f, -10.0f };
+        // eye = { 0.0f, -10.0f, -10.0f };
+        eye = {menuModel.pos.x, menuModel.pos.y -10.0f, menuModel.pos.z -10.0f};
     }
 
     vec3 hit { static_cast<float>(msX), static_cast<float>(msY), static_cast<float>(msZ) };
@@ -323,7 +324,7 @@ void _menuScene::spawnBullet() {
     if (len < 1e-5f) return;
     dir.x/=len; dir.y/=len; dir.z/=len;
 
-    ctx.bullet->src  = eye;
+    ctx.bullet->src  = {menuModel.pos.x, menuModel.pos.y, menuModel.pos.z}; // from camera eye
     ctx.bullet->des  = { hit.x, hit.y, hit.z }; // straight to unprojected point
     ctx.bullet->pos  = ctx.bullet->src;
     ctx.bullet->t    = 0.0f;
