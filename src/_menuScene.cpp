@@ -9,6 +9,11 @@
 //{
 //    //dtor
 //}
+namespace {
+    constexpr float kMainMenuCubeEdge  = 2.0f;  // matches menuRender()
+    constexpr float kPauseMenuCubeEdge = 1.6f;  // matches pause mode in menuRender()
+    constexpr float kHitPadding        = 0.5f;  // inflate hit volume beyond cube edge
+}
 
 static bool gSkyLoaded = false;
 static void ensureMenuSkyboxLoaded(_skyBox* sb) {
@@ -110,10 +115,14 @@ void _menuScene::mouseMapping(int x, int y) {
 // -------- setup per mode --------
 void _menuScene::enterMainMenu() {
     menuCamera.camInit();
+
+    const float halfEdge = kMainMenuCubeEdge * 0.5f;
+    const float blockRadius = halfEdge + kHitPadding; // treat boxes as “bigger”
+
     menuBlocks = {
-        { { -3.0f, 0.0f, -20.0f }, 1.2f, MenuBlock::Type::StartGame },
-        { {  0.0f, 0.0f, -20.0f }, 1.2f, MenuBlock::Type::Help      },
-        { {  3.0f, 0.0f, -20.0f }, 1.2f, MenuBlock::Type::Quit      },
+        { { -3.0f, 0.0f, -20.0f }, blockRadius, MenuBlock::Type::StartGame },
+        { {  0.0f, 0.0f, -20.0f }, blockRadius, MenuBlock::Type::Help      },
+        { {  3.0f, 0.0f, -20.0f }, blockRadius, MenuBlock::Type::Quit      },
     };
 
     menuBullet.actionTrigger = menuBullet.READY;
@@ -121,15 +130,20 @@ void _menuScene::enterMainMenu() {
     menuBullet.t = 0.0f;
 }
 
+
 void _menuScene::enterPause() {
-        pauseCamera.camInit();
-//    pauseCamera = menuCamera; // inherit aim
+    pauseCamera.camInit();
+
+    const float halfEdge = kPauseMenuCubeEdge * 0.5f;
+    const float blockRadius = halfEdge + kHitPadding;
+
     pauseBlocks = {
-        { {  0.0f,  3.0f, -12.0f }, 1.0f, MenuBlock::Type::Resume   },
-        { {  0.0f,  1.0f, -12.0f }, 1.0f, MenuBlock::Type::Help     }, // added Help
-        { {  0.0f, -1.0f, -12.0f }, 1.0f, MenuBlock::Type::MainMenu },
-        { {  0.0f, -3.0f, -12.0f }, 1.0f, MenuBlock::Type::Quit     },
+        { {  0.0f,  3.0f, -12.0f }, blockRadius, MenuBlock::Type::Resume   },
+        { {  0.0f,  1.0f, -12.0f }, blockRadius, MenuBlock::Type::Help     },
+        { {  0.0f, -1.0f, -12.0f }, blockRadius, MenuBlock::Type::MainMenu },
+        { {  0.0f, -3.0f, -12.0f }, blockRadius, MenuBlock::Type::Quit     },
     };
+
     pauseBullet.actionTrigger = pauseBullet.READY;
     pauseBullet.live = false;
     pauseBullet.t = 0.0f;
@@ -234,7 +248,9 @@ void _menuScene::menuRender() {
 
     // Blocks
 
-    float cubeEdge = (mode == Mode::InGameMenu) ? 1.6f : 2.0f;
+    float cubeEdge = (mode == Mode::InGameMenu) ? kPauseMenuCubeEdge : kMainMenuCubeEdge;
+
+
     for (const auto& block : *ctx.blocks) {
         glPushMatrix();
         glTranslatef(block.centerPosition.x, block.centerPosition.y, block.centerPosition.z);
