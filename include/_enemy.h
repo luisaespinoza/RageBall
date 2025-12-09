@@ -52,6 +52,10 @@ public:
     // runtime
     State state = State::Patrol;
     float stateT = 0.f;
+    float cooldownMin = 0.8f;   // minimum seconds before next attack
+    float cooldownMax = 1.6f;   // maximum seconds
+    float cooldownTarget = 1.0f; // chosen each time we enter Cooldown
+
 
     void render() override;
     template<typename Space>
@@ -192,6 +196,8 @@ public:
                 //           << " r=" << ball.radius << "\n";
 
                 // 6) Go to cooldown
+                // choose random cooldown between min and max
+                cooldownTarget = cooldownMin + static_cast<float>(rand()) / RAND_MAX * (cooldownMax - cooldownMin);
                 state  = State::Cooldown;
                 stateT = 0.f;
             }
