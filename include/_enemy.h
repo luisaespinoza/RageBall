@@ -137,16 +137,41 @@ public:
                 }
                 break;
 
-                   case State::Throw:
+            case State::Throw:
             if (target) {
-                // aim at the player's chest
+                // 1) Decide where we want to throw: player chest
                 vec3 tgt{
                     target->position.x,
                     target->position.y + 1.2f * target->radius,
                     target->position.z
                 };
 
-                // muzzle position: a bit in front of and above the enemy
+                // 2) Start like Player::throwAt: src/des/pos/speed/spread
+                ball.src   = position;
+                ball.des   = tgt;
+                ball.pos   = ball.src;
+                ball.speed = 18.0f;   // same as your previous speed
+                ball.coneHalfAngleDeg = 3.0f;
+
+                // 3) Compute normalized direction to target
+                vec3 d{
+                    tgt.x - position.x,
+                    tgt.y - position.y,
+                    tgt.z - position.z
+                };
+                float L = std::sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+                if (L > 1e-6f) {
+                    d.x /= L; d.y /= L; d.z /= L;
+                }
+                ball.dir = d;
+
+                // 4) Reset timing and mark as "fired"
+                ball.t        = 0.0f;
+                ball.traveled = 0.0f;
+                ball.live     = true;
+                ball.actionTrigger = ball.SHOOT;  // <-- match Player
+
+                // 5) Adjust muzzle to be in front of the enemy (like your old code)
                 const float yr = yawDeg * (3.1415926535f / 180.f);
                 vec3 fwdW{ std::sin(yr), 0.f, -std::cos(yr) };
                 vec3 muzzle{
@@ -155,47 +180,24 @@ public:
                     position.z + fwdW.z * (0.30f * radius)
                 };
 
-                // --- MANUAL projectile init (ignore Character::throwAt for now) ---
-                const float speed   = 18.0f;
-                const float spread  = 3.0f;
-
-                ball.src   = muzzle;
-                ball.des   = tgt;
-                ball.pos   = muzzle;
-                ball.speed = speed;
-                ball.coneHalfAngleDeg = spread;
-
-                // direction from muzzle → target
-                vec3 d{
-                    tgt.x - muzzle.x,
-                    tgt.y - muzzle.y,
-                    tgt.z - muzzle.z
-                };
-                float L = std::sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
-                if (L > 1e-6f) {
-                    d.x /= L; d.y /= L; d.z /= L;
-                }
-                ball.dir = d;
-
-                ball.t        = 0.0f;
-                ball.traveled = 0.0f;
-                ball.radius   = std::max(0.05f, 2.5f * radius);
-                ball.live     = true;  // <-- IMPORTANT
-
+                ball.src    = muzzle;
+                ball.pos    = muzzle;
+                ball.radius = std::max(0.05f, 2.5f * radius);
                 ball.setTrajectory(makeTrajectory ? makeTrajectory()
                                                   : Trajectory_Straight());
 
-                // TEMP DEBUG
-                std::cout << "[Enemy] spawn ball live=" << ball.live
-                          << " pos=(" << ball.pos.x << "," << ball.pos.y << "," << ball.pos.z << ")"
-                          << " r=" << ball.radius << "\n";
+                // (optional debug)
+                // std::cout << "[Enemy] spawn ball live=" << ball.live
+                //           << " pos=(" << ball.pos.x << "," << ball.pos.y << "," << ball.pos.z << ")"
+                //           << " r=" << ball.radius << "\n";
 
-                // go to cooldown
+                // 6) Go to cooldown
                 state  = State::Cooldown;
                 stateT = 0.f;
             }
             vW = {0,0,0};
             break;
+
 
             case State::Cooldown:
                 vW = {0,0,0};
