@@ -5,9 +5,19 @@
 #include <_model.h>
 #include <_timerPlusPlus.h>
 
+// Animation Data Container, used for holding the array of models used for drawing frames.
+class _animationData {
+    // We use a separate class to help with memory, we want each instance of _animation to have its own frames, current frame, FPS, etc but share the data so we dont need t copy it over and over
+    public:
+        _animationData();
+        ~_animationData();
+        vector<_model*> frames;       
+};
+
 class _animation {
     public:
         _animation();
+        _animation(const _animation& other); // copy constructor
         virtual ~_animation();
 
         // Sets up an animation with the specified parameters
@@ -18,6 +28,7 @@ class _animation {
         // fps: Frames per second for playback
         // frameOffset: Starting index for frame numbering in the model files
         // scale: Scale to apply to each frame model
+        // THIS CAN NEVER BE CALLED ON A COPY, ONLY THE ORIGINAL INSTANCE !!!
         void initAnimation(char* textPath, char* modelPath, int frames, int fps, int frameOffset, vec3f scale);
         // Renders the current frame of the animation at the specified position and rotation
         void drawAnimation(vec3f position, vec3f rotation);
@@ -26,14 +37,20 @@ class _animation {
         // Number of total frames in the animation
         int frames;
         // Current frame being displayed
-        int currentFrame;
+        int currentFrame = 0;
         // Frames per second for the animation playback
         int FPS;
+        // We track who the master copy is for resource management -- this is done higher up 
+        bool ownsResources = false;
+        // whether the animation should loop or stop at the end -- if disabled requires manual reset
+        bool loopAnimation = true; 
+        bool animationComplete = false; // set to true when animation reaches the end (non-looping only)
         
     protected:
     private:
         _timerPlusPlus* animationTimer = nullptr;
-        vector<_model*> animationFrames;
+        //vector<_model*> animationFrames;
+        _animationData* animationData = nullptr;
 
     
 };

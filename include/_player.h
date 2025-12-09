@@ -12,6 +12,7 @@
 #include<_model.h>
 
 enum PlayerAnimation {IDLE, WALK};
+enum PlayerThrowAnimation {THROW_NONE, THROW_PREP, THROW_RELEASE};
 
 struct PlayerInput {
     bool moveFwd  = false;
@@ -24,6 +25,7 @@ struct Player : public Character {
     vec3 position{0,0,0};
     vec3f rotation = {0.0f,0.0f,0.0f};
     vec3f vec_scale = {1.0f,1.0f,1.0f};
+    col3f color = {1.0f,1.0f,1.0f};
     float yawDeg = 0.f;
     float speed  = 6.0f;
     float radius = 0.5f;
@@ -34,11 +36,16 @@ struct Player : public Character {
     float animDt = 1.0f/60.0f;  // last dt passed from level
     // JANUS - OBJ PLAYER SECTION //
     PlayerAnimation currentAnimation;
+    PlayerThrowAnimation currentThrowAnimation = THROW_NONE;
     _model* playerModel = nullptr;
     _model* ballModel = nullptr;
+    _model* playerNoArmModel = nullptr; // used for idle throwing
     _animation* walk_body_animation = nullptr;
     _animation* walk_arm_animation = nullptr;
     _animation* walk_ball_animation = nullptr;
+    // for throwing animation
+    _animation* throw_prep_arm_animation = nullptr;
+    _animation* throw_prep_ball_animation = nullptr;
     _timerPlusPlus* animationTimer = nullptr;
     bool hasBall = true;
     void initPlayer()
@@ -59,12 +66,19 @@ struct Player : public Character {
         // ball
         ballModel->initModel("images/dodgeball.jpg", "models/ball_idle.obj", _model::CUSTOM);
         ballModel->scale = vec_scale;
+
+        playerNoArmModel->initModel("", "models/player_no_arm.obj", _model::CUSTOM);
+        playerNoArmModel->scale = vec_scale;
         // collision
         //collisionBox->initBoundingBox({0.7f, 2.0f, 0.7f}, (position+collisionBoxOffset), size);
         // animations
         walk_body_animation->initAnimation("", "models/animations/Walk_Forward/Body/Walk_Forward", 24, 28, 12, playerModel->scale);
         walk_arm_animation->initAnimation("", "models/animations/Walk_Forward/RightArm/Walk_Forward", 24, 28, 12, playerModel->scale);
         walk_ball_animation->initAnimation("images/dodgeball.jpg", "models/animations/Walk_Forward/Ball/Walk_Forward", 24, 28, 12, playerModel->scale);
+        throw_prep_arm_animation->initAnimation("", "models/animations/Player_Throw/Prep_Throw_Arm/prep_throw_arm", 48, 24, 1, playerModel->scale);
+        throw_prep_ball_animation->initAnimation("images/dodgeball.jpg", "models/animations/Player_Throw/Prep_Throw_Ball/prep_throw_ball", 48, 24, 1, playerModel->scale);
+        throw_prep_arm_animation->loopAnimation = false;
+        throw_prep_ball_animation->loopAnimation = false;
     }
     void drawPlayer()
     {
@@ -73,12 +87,29 @@ struct Player : public Character {
             case WALK:
                 animationTimer->reset();
                 walk_body_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                if (currentThrowAnimation == THROW_PREP) {
+                    throw_prep_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    if (hasBall) {
+                        throw_prep_ball_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    }
+                    break;
+                }
                 walk_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
                 if (hasBall) {
                     walk_ball_animation->drawAnimation({position.x, position.y, position.z}, rotation);
                 }
                 break;
             case IDLE:
+                if (currentThrowAnimation == THROW_PREP) {
+                    throw_prep_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    if (hasBall) {
+                        throw_prep_ball_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    }
+                    playerNoArmModel->position = {position.x, position.y, position.z};
+                    playerNoArmModel->rotation = rotation;
+                    playerNoArmModel->drawModel();
+                    break;
+                }
                 playerModel->position = {position.x, position.y, position.z};
                 playerModel->rotation = rotation;
                 playerModel->drawModel();
@@ -87,6 +118,7 @@ struct Player : public Character {
                     ballModel->rotation = rotation;
                     ballModel->drawModel();
                 }
+                break;
             default:
                 break;
         }
@@ -193,7 +225,11 @@ void applyScale(float s) {
         walk_body_animation = new _animation();
         walk_arm_animation = new _animation();
         walk_ball_animation = new _animation();
+        throw_prep_arm_animation = new _animation();
+        throw_prep_ball_animation = new _animation();
         animationTimer = new _timerPlusPlus();
+        playerNoArmModel = new _model();
+
     }
     ~Player() {
         delete ball; 
@@ -208,6 +244,9 @@ void applyScale(float s) {
         delete walk_arm_animation;
         delete walk_ball_animation;
         delete animationTimer;
+        delete throw_prep_arm_animation;
+        delete throw_prep_ball_animation;
+        delete playerNoArmModel;
     }
 };
 #endif // _PLAYER_H

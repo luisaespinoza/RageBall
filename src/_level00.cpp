@@ -1,6 +1,6 @@
-#include "_level02.h"
+#include "_level00.h"
 
-_level02::_level02() {
+_level00::_level00() {
     bleachers = new _model();
     front_back_walls = new _model();
     left_wall = new _model();
@@ -22,12 +22,12 @@ _level02::_level02() {
     ballThrowTimer = new _timerPlusPlus();
 }
 
-_level02::~_level02() {
+_level00::~_level00() {
     unloadAssets();
 }
 
-void _level02::loadAssets() {
-    currentStage = LEVEL02_INIT;
+void _level00::loadAssets() {
+    currentStage = LEVEL00_INIT;
     // PLAYER INIT //
     player->vec_scale = {0.15f, 0.15f, 0.15f};
     player->initPlayer();
@@ -52,12 +52,13 @@ void _level02::loadAssets() {
     ballPrototype = new _balls();
     ballPrototype->initModel("images/dodgeball.jpg", "models/dodge_ball.obj", _model::CUSTOM);
     ballPrototype->scale = {0.15f, 0.15f, 0.15f};
-    ballPrototype->addBoundingBox({1.0f, 1.0f, 1.0f}, ballPrototype->position, ballPrototype->scale);
+    ballPrototype->addBoundingBox({1.5f, 1.5f, 1.5f}, ballPrototype->position, ballPrototype->scale);
     // TARGETS INIT //
     targetPrototype = new _targets();
     targetPrototype->initModel("images/target/target.jpg", "models/target/target_main.obj", _model::CUSTOM);
     // THROWERS INIT //
     throwerPrototype = new _thrower();
+    throwerPrototype->scale = {0.3f, 0.3f, 0.3f};
     throwerPrototype->initThrower();
     // CAMERA INIT//
     characterCamera->camInit();
@@ -74,15 +75,16 @@ void _level02::loadAssets() {
     directorTimer->reset();
     ballThrowTimer->reset();
     // start game 
-    currentStage = LEVEL02_PLAYING_0;
+    currentStage = LEVEL00_PLAYING_0;
     updateDirector(true); // force update to spawn initial targets
 }
 
-void _level02::unloadAssets()
+void _level00::unloadAssets()
 {
     // clean up dynamically allocated memory -- setting all pointers to nullptr is a bit excessive, but safe
     delete ballPrototype; ballPrototype = nullptr;
     delete targetPrototype; targetPrototype = nullptr;
+    delete throwerPrototype; throwerPrototype = nullptr;
     for (int i = 0; i < balls.size(); i++) {
         delete balls[i];
         balls[i] = nullptr;
@@ -93,6 +95,11 @@ void _level02::unloadAssets()
         targets[i] = nullptr;
     }
     targets.clear();
+    for (int i = 0; i < throwers.size(); i++) {
+        delete throwers[i];
+        throwers[i] = nullptr;
+    }
+    throwers.clear();
     delete characterCamera; characterCamera = nullptr;
     delete noclipCamera; noclipCamera = nullptr;
 
@@ -115,8 +122,8 @@ void _level02::unloadAssets()
     delete ballThrowTimer; ballThrowTimer = nullptr;
 }
 
-void _level02::handleKey(UINT uMsg, WPARAM wParam) {
-    if (currentStage == LEVEL02_INIT) {
+void _level00::handleKey(UINT uMsg, WPARAM wParam) {
+    if (currentStage == LEVEL00_INIT) {
         // Loading stage - skip input handling
         return;
     }
@@ -153,15 +160,15 @@ void _level02::handleKey(UINT uMsg, WPARAM wParam) {
         case VK_DIVIDE:
             if (keyTimer->getTicks() > 300) {
                 cout << "Spawning a thrower!" << endl;
-                createThrower({0.0f, 2.0f, 0.0f}, 1.3f, 1);
+                createThrower({0.0f, 1.0f, 0.0f}, 1.3f, 1);
                 keyTimer->reset();
             }
             break;
     }
 }
 
-int _level02::winMsg(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (currentStage == LEVEL02_INIT) {
+int _level00::winMsg(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    if (currentStage == LEVEL00_INIT) {
         // Loading stage - skip input handling
         return 0;
     }
@@ -202,21 +209,42 @@ int _level02::winMsg(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-void _level02::applyCamera() {
-
+void _level00::applyCamera() {
 }
 
-void _level02::reset() {
-
+void _level00::reset() {
+    currentStage = LEVEL00_INIT;
+    player->position = {0.0f, 4.0f, 25.0f};
+    playerHealth = 5;
+    playerLastHitid = -1;
+    // delete existing balls/targets/throwers
+    for (int i = 0; i < balls.size(); i++) {
+        delete balls[i];
+        balls[i] = nullptr;
+    }
+    balls.clear();
+    for (int i = 0; i < targets.size(); i++) {
+        delete targets[i];
+        targets[i] = nullptr;
+    }
+    targets.clear();
+    for (int i = 0; i < throwers.size(); i++) {
+        delete throwers[i];
+        throwers[i] = nullptr;
+    }
+    throwers.clear();
+     // start game 
+    currentStage = LEVEL00_PLAYING_0;
+    updateDirector(true); // force update to spawn initial targets
 }
 
-void _level02::updateDirector(bool forceUpdate) {
+void _level00::updateDirector(bool forceUpdate) {
     if (forceUpdate) {
         // force update -- dont check for level change conditions just change stage
         switch (currentStage) {
-            case LEVEL02_INIT:
+            case LEVEL00_INIT:
                 break;
-            case LEVEL02_PLAYING_0:
+            case LEVEL00_PLAYING_0:
                 // Spawn 5 static targets at random positions
                 directorTimer->reset();
                 for (int i = 0; i < 5; i++) {
@@ -224,7 +252,8 @@ void _level02::updateDirector(bool forceUpdate) {
                     createTarget(pos, 0.0f);
                 }
                 break;
-            case LEVEL02_PLAYING_1:
+            case LEVEL00_PLAYING_1:
+                // Spawn 5 moving targets at random positions
                 directorTimer->reset();
                 for (int i = 0; i < 5; i++) {
                     vec3f pos = {RNG::getFloat(-10.0f, 10.0f), RNG::getFloat(1.0f,3.0f), RNG::getFloat(-20.0f, 0.0f)};
@@ -237,38 +266,75 @@ void _level02::updateDirector(bool forceUpdate) {
                     }
                 }
                 break;
-            case LEVEL02_COMPLETE:
+            case LEVEL00_PLAYING_2:
+                // Spawn 3 throwers at random positions
+                directorTimer->reset();
+                for (int i = 0; i < 3; i++) {
+                    vec3f pos = {RNG::getFloat(-10.0f, 10.0f), 1.0f, RNG::getFloat(-20.0f, 0.0f)};
+                    float speed = RNG::getFloat(0.5f, 1.5f);
+                    int direction = RNG::getInt(0,1);
+                    if (direction == 0) {
+                        createThrower(pos, speed,-1);
+                    } else {
+                        createThrower(pos, speed,1);
+                    }
+                }
+                break;
+            case LEVEL00_COMPLETE:
+                levelComplete = true;
+                // transition to next level -> level01
+                if (requestNextLevel_ && !nextLevelId_.empty()) {
+                    requestNextLevel_(nextLevelId_);
+                }
                 break;
         }
     } else {
         // passive director update -- check for level change conditions
         switch (currentStage) {
-            case LEVEL02_INIT:
+            case LEVEL00_INIT:
                 break;
-            case LEVEL02_PLAYING_0:
+            case LEVEL00_PLAYING_0:
                 if (targets.size() == 0) {
                     cout << "All targets cleared! Advancing to next stage." << endl;
-                    currentStage = LEVEL02_PLAYING_1;
+                    currentStage = LEVEL00_PLAYING_1;
                     updateDirector(true);
                 }
                 break;
-            case LEVEL02_PLAYING_1:
+            case LEVEL00_PLAYING_1:
+                if (targets.size() == 0) {
+                    cout << "All targets cleared! Advancing to next stage." << endl;
+                    currentStage = LEVEL00_PLAYING_2;
+                    updateDirector(true);
+                }
                 break;
-            case LEVEL02_COMPLETE:
+            case LEVEL00_PLAYING_2:
+                if (throwers.size() == 0) {
+                    cout << "All targets cleared! Advancing to next stage." << endl;
+                    currentStage = LEVEL00_COMPLETE;
+                    updateDirector(true);
+                }
+                break;
+            case LEVEL00_COMPLETE:
                 break;
         }
     }
 }
 
-void _level02::debugPrint() {
+void _level00::debugPrint() {
     cout << "Player Position: (" << player->position.x << ", " << player->position.y << ", " << player->position.z << ")" << endl;
     cout << "Mouse Position: (" << lastMouseX << ", " << lastMouseY << ")" << endl;
     cout << "Window Size: (" << windowWidth << " x " << windowHeight << ")" << endl;
     cout << "Ball Power: " << ballPower << endl;
+    cout << "Player Health: " << playerHealth << endl;
 }
 
-void _level02::update(double dt) {
-    if (currentStage == LEVEL02_INIT) {
+void _level00::update(double dt) {
+    if (playerHealth <= 0) {
+        cout << "Player has been defeated! Resetting level." << endl;
+        reset();
+        return;
+    }
+    if (currentStage == LEVEL00_INIT) {
         // Loading stage - skip updates
         return;
     }
@@ -322,8 +388,8 @@ void _level02::update(double dt) {
             player->rotation.y = 90.0f;
             player->currentAnimation = WALK;
         }
-        if (space && std::find(collisions.begin(), collisions.end(), _boundingBox::NONE) == collisions.end()) {
-            playerVelocity.y = 10.0f; // jump impulse
+        if (space && std::count(collisions.begin(), collisions.end(), _boundingBox::POS_Y) > 0) {
+            playerVelocity.y = 5.0f; // jump impulse
             jumpImpulse = true;
         }
         // Diagonal Movement Adjustments    
@@ -340,18 +406,35 @@ void _level02::update(double dt) {
             player->rotation.y = 45.0f;
         }
         if (leftMouse) {
-            ballPower = ballThrowTimer->getTicks() / 1000.0f; // seconds held
+            player->currentThrowAnimation = THROW_PREP;
+            if (!player->throw_prep_arm_animation->animationComplete) {
+                ballPower = ballThrowTimer->getTicks() / 1000.0f; // seconds held
+            }
         } else {
             if (ballPower > 0.0f) {
                 if (ballTimer->getTicks() >= 500) {
-                    createBall();
+                    createBall(BALL_FRIENDLY, {player->position.x, player->position.y, player->position.z}, 10.0f);
                     ballTimer->reset();
                 } 
             }
             ballPower = 0.0f;
             ballThrowTimer->reset();
+            player->currentThrowAnimation = THROW_NONE;
+            player->throw_prep_arm_animation->resetAnimation();
+            player->throw_prep_ball_animation->resetAnimation();
+
         }
     }
+    player->color = {1.0f, 1.0f, 1.0f};
+    // PLAYER COLLISION CHECK WITH ENEMY BALLS //
+    for (int i = 0; i < balls.size(); i++) {
+            if (balls[i]->isCollidingWith(*playerHitBox) && balls[i]->ballType == BALL_ENEMY && balls[i]->modelId != playerLastHitid) {
+                player->color = {1.0f, 0.0f, 0.0f};
+                playerLastHitid = balls[i]->modelId;
+                playerHealth--;
+                break;
+            }
+        }
     // HANDLE GRAVITY //
     if (std::find(collisions.begin(), collisions.end(), _boundingBox::POS_Y) == collisions.end()) {
         playerAccel.y = gravity;
@@ -428,7 +511,7 @@ void _level02::update(double dt) {
         targets[i]->updateModel(physicsDt);
         // collison check
         for (int j = 0; j < balls.size(); j++) {
-            if (targets[i]->isCollidingWith(balls[j]->boundingBoxes[0])) {
+            if (targets[i]->isCollidingWith(balls[j]->boundingBoxes[0]) && balls[j]->ballType == BALL_FRIENDLY) {
                 targets[i]->targetHit();
                 break;
             }
@@ -447,15 +530,22 @@ void _level02::update(double dt) {
     for (int i = 0; i < throwers.size(); i++) {
         // movement
         throwers[i]->updateModel(physicsDt);
+        // look for attack
+        if (throwers[i]->throwBall) {
+            createBall(BALL_ENEMY, {throwers[i]->position.x, throwers[i]->position.y+2.0f, throwers[i]->position.z}, RNG::getFloat(7.0f, 14.0f)); 
+            throwers[i]->throwBall = false;
+            throwers[i]->throwInterval = RNG::getInt(2, 7); // throw every 2-5 seconds
+        }
         // collison check
         for (int j = 0; j < balls.size(); j++) {
-            if (throwers[i]->isCollidingWith(balls[j]->boundingBoxes[0])) {
+            if (throwers[i]->isCollidingWith(balls[j]->boundingBoxes[0]) && balls[j]->ballType == BALL_FRIENDLY) {
                 throwers[i]->hitThrower(balls[j]->modelId);
                 break;
             }
         }
         // move collison box
         throwers[i]->boundingBoxes[0].position = throwers[i]->position;
+        throwers[i]->boundingBoxes[0].position.y = throwers[i]->position.y + 1.5f;
     }
     // THROWER DELETION //
     for (int i = throwers.size()-1; i >=0 ; i--) {   
@@ -480,8 +570,8 @@ void _level02::update(double dt) {
     }
 }
 
-void _level02::render(const RenderFlags& flags) {
-    if (currentStage == LEVEL02_INIT) {
+void _level00::render(const RenderFlags& flags) {
+    if (currentStage == LEVEL00_INIT) {
         // Loading stage - skip input handling
         return;
     }
@@ -525,7 +615,7 @@ void _level02::render(const RenderFlags& flags) {
     }
 }
 
-void _level02::debugPrintCollisionInfo(const _boundingBox::collisionType& collision) {
+void _level00::debugPrintCollisionInfo(const _boundingBox::collisionType& collision) {
     switch (collision) {
         case _boundingBox::NONE:
             cout << "No Collision Detected." << endl;
@@ -551,26 +641,39 @@ void _level02::debugPrintCollisionInfo(const _boundingBox::collisionType& collis
     }
 }
 
-void _level02::createBall() {
-    float ballVelocity = 10.0f * ballPower; // temp
-    // normalize mouse coords between -1 and 1
-    // -1 = LEFT or BOTTOM, 1 = RIGHT or TOP
-    float mouseXNorm = (2.0f * lastMouseX) / windowWidth - 1.0f;
-    float mouseYNorm = 1.0f - (2.0f * lastMouseY) / windowHeight;
-    
-    _balls* newBall = new _balls(*ballPrototype); // copy prototype
-    newBall->ballType = BALL_FRIENDLY;
-    newBall->spawnTime = ballDeleteTimer->getTicks();
-    newBall->position = {player->position.x, player->position.y + 1.0f, player->position.z};
-    newBall->velocity.x = ballVelocity * mouseXNorm;
-    //newBall->velocity.y = ballVelocity * mouseYNorm;
-    newBall->velocity.y = ballVelocity * 0.25f; // slight arc
-    newBall->velocity.z = -ballVelocity; // forward
-    newBall->boundingBoxes[0].position = {newBall->position.x, newBall->position.y, newBall->position.z};
-    balls.push_back(newBall);
+void _level00::createBall(BallType type, vec3f position, float velocity) {
+    if (type == BALL_FRIENDLY) {
+        // normalize mouse coords between -1 and 1
+        // -1 = LEFT or BOTTOM, 1 = RIGHT or TOP
+        float ballVelocity = velocity * ballPower; 
+        float mouseXNorm = (2.0f * lastMouseX) / windowWidth - 1.0f;
+        float mouseYNorm = 1.0f - (2.0f * lastMouseY) / windowHeight;
+        
+        _balls* newBall = new _balls(*ballPrototype); // copy prototype
+        newBall->ballType = type;
+        newBall->spawnTime = ballDeleteTimer->getTicks();
+        newBall->position = {position.x, position.y + 1.0f, position.z};
+        newBall->velocity.x = ballVelocity * mouseXNorm;
+        //newBall->velocity.y = ballVelocity * mouseYNorm;
+        newBall->velocity.y = ballVelocity * 0.25f; // slight arc
+        newBall->velocity.z = -ballVelocity; // forward
+        newBall->boundingBoxes[0].position = {newBall->position.x, newBall->position.y, newBall->position.z};
+        balls.push_back(newBall);
+    }
+    if (type == BALL_ENEMY) {
+        _balls* newBall = new _balls(*ballPrototype); // copy prototype
+        newBall->ballType = type;
+        newBall->spawnTime = ballDeleteTimer->getTicks();
+        newBall->position = {position.x, position.y + 1.0f, position.z};
+        newBall->velocity.x = 0.0f;
+        newBall->velocity.y = velocity*0.25f;
+        newBall->velocity.z = velocity; // backward
+        newBall->boundingBoxes[0].position = {newBall->position.x, newBall->position.y, newBall->position.z};
+        balls.push_back(newBall);
+    }
 }
 
-void _level02::createTarget(vec3f position, float speed, int direction) {
+void _level00::createTarget(vec3f position, float speed, int direction) {
     _targets* newTarget = new _targets(*targetPrototype); // copy prototype
     newTarget->scale = {0.3f, 0.3f, 0.3f};
     newTarget->position = position;
@@ -585,7 +688,7 @@ void _level02::createTarget(vec3f position, float speed, int direction) {
     targets.push_back(newTarget);
 }
 
-void _level02::createThrower(vec3f position, float speed, int direction) {
+void _level00::createThrower(vec3f position, float speed, int direction) {
     _thrower* newThrower = new _thrower(*throwerPrototype); // copy prototype
     newThrower->speed = speed;
     newThrower->direction = direction;
@@ -593,7 +696,7 @@ void _level02::createThrower(vec3f position, float speed, int direction) {
 
     newThrower->leftBound = -12.5f;
     newThrower->rightBound = 12.5f;
-    newThrower->addBoundingBox({1.0f, 1.0f, 1.0f}, newThrower->position, newThrower->scale);
+    newThrower->addBoundingBox({6.0f, 7.0f, 2.0f}, {newThrower->position.x, newThrower->position.y+2.0f, newThrower->position.z}, newThrower->scale);
     throwers.push_back(newThrower);
     //newThrower->rotation.x = 90.0f;
 }

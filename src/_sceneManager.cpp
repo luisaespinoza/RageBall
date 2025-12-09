@@ -3,6 +3,13 @@
 _sceneManager::_sceneManager()
 {
     //ctor
+    // level 00 -> level01
+    LevelRegistry::instance().registerLevel("level00", [](){
+        auto L = std::make_unique<_level00>(); // doesnt need text file for level00
+        L->setNextLevelId("level01");
+        return L;
+    });
+
     // level01 -> level02
     LevelRegistry::instance().registerLevel("level01", [](){
         auto L = std::make_unique<_level01>("levels/level01.txt");
@@ -16,9 +23,9 @@ _sceneManager::_sceneManager()
     //     L->setNextLevelId("level03");
     //     return L;
     // });
-    LevelRegistry::instance().registerLevel("level02", [](){
-        return std::make_unique<_level02>();
-    });
+    // LevelRegistry::instance().registerLevel("level02", [](){
+    //     return std::make_unique<_level02>();
+    // });
 
     // level03 -> back to main menu
     LevelRegistry::instance().registerLevel("level03", [](){
@@ -37,7 +44,7 @@ this->setCurrentScene(std::make_unique<_menuScene>(
     },
     /* onQuit  */ [this]{ PostQuitMessage(0); },
     //"level01"
-    "level02"   // TEMP FOR TESTING
+    "level00"   // TEMP FOR TESTING
 ));
 }
 
@@ -208,6 +215,11 @@ LoadLevelScene::LoadLevelScene(std::unique_ptr<ILevel> lvl,
     : level(std::move(lvl)), loadLevelFn(std::move(fn)) {}
 void LoadLevelScene::onEnter(){
     std::cout << "[load] onEnter: loadAssets begin\n";
+
+    // register level00
+    if (auto* l00 = dynamic_cast<_level00*>(level.get())) {
+        if (loadLevelFn) l00->setRequestNextLevel(loadLevelFn);
+    }
 
     if (auto* l01 = dynamic_cast<_level01*>(level.get())) {
         if (loadLevelFn) l01->setRequestNextLevel(loadLevelFn);

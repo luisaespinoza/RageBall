@@ -58,6 +58,7 @@ class _thrower : public _model {
         _thrower();
         _thrower(const _thrower& other);    // copy constructor
         virtual ~_thrower();
+        // Initializes a thrower with animations -- this should be ran only on the master copy (prototype), never on copies
         void initThrower();
         virtual void drawModel() override;
         void updateModel(double dt);
@@ -70,14 +71,14 @@ class _thrower : public _model {
         ThrowerAnimationStates currentState = IDLE;
         ThrowerExistenceStates existenceState = ALIVE;
 
-
+        bool throwBall = false;
         int health = 1;
         float leftBound = -12.5f;
         float rightBound = 12.5f;
         float speed = 0; // speed at which target moves
         int direction = 0; // direction of movement: 1 = right, -1 = left
         float deathLength = 2.0; // Length enemy exists in HIT animation prior to death (seconds)
-        float throwInterval = 7.0f; // seconds between throws
+        float throwInterval = 2.0f; // seconds between throws
     protected:
     private:
         _timerPlusPlus* stateTimer = nullptr;
@@ -90,6 +91,8 @@ class _thrower : public _model {
 
         int lastHitIndex = -1; // each model has a uniquie model id, this checks the LAST collision to prevent multiple hits from same ball
         int currentFrame = 0; // number of frames progressed in current animation -- for transitions
+        void resetAnimations();
+        bool ownsAnimations = true; // for proper deletion of heap-allocated memory
 };
 
 

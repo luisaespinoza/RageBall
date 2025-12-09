@@ -5,6 +5,7 @@
 _targets::_targets()
 {
     //ctor
+    // no need for owernship tracking -- animations always owned here
     hitTimer = new _timerPlusPlus();
 }
 
@@ -59,9 +60,7 @@ void _targets::updateModel(double dt) {
 
 void _targets::drawModel()
 {
-    if (state != DEAD) {
-         _model::drawModel();
-    }
+    _model::drawModel();
 }
 
 /*  -------- BALLS  -------- */
@@ -109,6 +108,7 @@ void _balls::drawModel()
 _thrower::_thrower()
 {
     //ctor
+    ownsAnimations = true;
     throw_animation = new _animation();
     reset_animation = new _animation();
     prep_animation = new _animation();
@@ -120,13 +120,20 @@ _thrower::_thrower()
 
 _thrower::_thrower(const _thrower& other) : _model(other) // calls the copy constructor of _model 
 {
+    ownsAnimations = false;
+
     throw_animation = new _animation(*other.throw_animation);
     reset_animation = new _animation(*other.reset_animation);
     prep_animation = new _animation(*other.prep_animation);
+    // keeps animations clean -- reset on copies
+    throw_animation->resetAnimation();
+    reset_animation->resetAnimation();
+    prep_animation->resetAnimation();
 
-    stateTimer = new _timerPlusPlus(*other.stateTimer);
-    hitTimer = new _timerPlusPlus(*other.hitTimer);
-    deathTimer = new _timerPlusPlus(*other.deathTimer);
+    stateTimer = new _timerPlusPlus();
+    hitTimer = new _timerPlusPlus();
+    deathTimer = new _timerPlusPlus();
+
     // copy states
     currentState = other.currentState;
     health = other.health;
@@ -143,9 +150,11 @@ _thrower::_thrower(const _thrower& other) : _model(other) // calls the copy cons
 _thrower::~_thrower()
 {
     //dtor
+    // animations always owned, delete
     delete throw_animation; throw_animation = nullptr;
     delete reset_animation; reset_animation = nullptr;
     delete prep_animation; prep_animation = nullptr;
+    // always own timers, so just delete them
     delete stateTimer; stateTimer = nullptr;
     delete hitTimer; hitTimer = nullptr;
     delete deathTimer; deathTimer = nullptr;
@@ -154,10 +163,10 @@ _thrower::~_thrower()
 void _thrower::initThrower() {
     // Initialize the model
     _model::initModel("", "models/thrower.obj", _model::CUSTOM);
-    // Initialize animations
-    throw_animation->initAnimation("", "models/animations/Thrower_Throw/thrower_throw", 24, 24, 0, scale);
-    reset_animation->initAnimation("", "models/animations/Thrower_Reset/thrower_reset", 8, 24, 48, scale);
-    prep_animation->initAnimation("", "models/animations/Thrower_Prep/thrower_prep", 12, 24, 56, scale);
+    // Initialize animations -- we can only intiAnimation on a master copy, thus initThrower must only be called on master
+    throw_animation->initAnimation("", "models/animations/Thrower_Throw/thrower_throw", 8, 24, 48, scale);
+    reset_animation->initAnimation("", "models/animations/Thrower_Reset/thrower_reset", 12, 24, 56, scale);
+    prep_animation->initAnimation("", "models/animations/Thrower_Prep/thrower_prep", 24, 24, 0, scale);
 
     stateTimer->reset();
     hitTimer->reset();
@@ -181,14 +190,17 @@ void _thrower::drawModel()
             if (prep_animation->currentFrame == prep_animation->frames - 1) {
                 // Transition to THROW state
                 currentState = THROW;
+                resetAnimations();
             } else {
                 prep_animation->drawAnimation(position, rotation);
             }
             break;
         case THROW:
-            if (prep_animation->currentFrame == throw_animation->frames - 1) {
+            if (throw_animation->currentFrame == throw_animation->frames - 1) {
                 // Transition to RESET state
+                throwBall = true; // signal to throw a ball
                 currentState = RESET;
+                resetAnimations();
             } else {
                 throw_animation->drawAnimation(position, rotation);
             }
@@ -197,6 +209,7 @@ void _thrower::drawModel()
             if (reset_animation->currentFrame == reset_animation->frames - 1) {
                 // Transition to IDLE state
                 currentState = IDLE;
+                resetAnimations();
                 stateTimer->reset();
             } else {
                 reset_animation->drawAnimation(position, rotation);
@@ -206,6 +219,7 @@ void _thrower::drawModel()
 }
 
 void _thrower::updateModel(double dt) {
+
     if (existenceState == DYING && deathTimer->getTicks() < deathLength * 1000) {
         rotation.x -= 45.0f * dt; // spin effect
         return; // do not update if dying
@@ -246,4 +260,10 @@ void _thrower::hitThrower(int modelId) {
         existenceState = DYING;
         deathTimer->reset();
     }
+}
+
+void _thrower::resetAnimations() {
+    throw_animation->resetAnimation();
+    reset_animation->resetAnimation(); // bad name -- means reset the "reset_animation"
+    prep_animation->resetAnimation();
 }
