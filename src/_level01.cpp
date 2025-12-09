@@ -567,7 +567,10 @@ void _level01::update(double dt)
         // --- LOCAL velocity ---
         // const float step = player->speed * (float)dt;
         float dtf = static_cast<float>(dt);
-        e->stateT += dtf;
+        for (auto& e : enemies) {
+            e->stateT += dtf;
+
+        }
 
         vec3 vL { str * step, 0.0f, -fwd * step };
 
@@ -787,7 +790,7 @@ for (size_t i = 0; i < enemies.size(); ++i) {
         vec3 pL = H.toLocal(player->position);
 
         // --- 2) Compute LOCAL velocity then convert to WORLD as a delta of transformed points ---
-        const float step = player->speed * (float)dtf;
+        const float step = player->speed * (float)dt;
 
         // local forward is -Z, strafe is +X
         vec3 vL = { str * step, 0.0f, -fwd * step };
