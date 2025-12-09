@@ -565,7 +565,7 @@ void _level01::update(double dt)
 
     if (useArena) {
         // --- LOCAL velocity ---
-        // const float step = player->speed * (float)dt;
+         const float step = player->speed * (float)dt;
         float dtf = static_cast<float>(dt);
         for (auto& e : enemies) {
             e->stateT += dtf;
@@ -646,57 +646,56 @@ for (size_t i = 0; i < enemies.size(); ++i) {
     auto& e = enemies[i];
     if (!e) continue;
 
-    // reuse stateT as a simple oscillator timer
-    e->stateT += static_cast<float>(dtf);
+    float dtf = static_cast<float>(dt);
+    e->stateT += dtf; // oscillator timer
 
     // Local positions
     vec3 eL = arena_.toLocal(e->position);
     vec3 pL = arena_.toLocal(player->position);
 
-    // --- Line-of-sight to the player in LOCAL XZ ---
+    // Direction to player in LOCAL XZ
     vec3 toP{ pL.x - eL.x, 0.0f, pL.z - eL.z };
     float L = std::sqrt(toP.x*toP.x + toP.z*toP.z);
     if (L > 1e-6f) {
         toP.x /= L;
         toP.z /= L;
     } else {
-        // fallback: aim down arena forward
-        toP = {0.0f, 0.0f, -1.0f};
+        // fallback direction if we're on top of the player
+        toP = { 0.0f, 0.0f, -1.0f };
     }
 
-    // Tangent strafe (left/right) and spacing
+    // Tangent (strafe) direction: 90° around Y
     vec3 tanL{ toP.z, 0.0f, -toP.x };
 
+    // Use enemy's preferred distance band
     float preferredMin = e->preferredMin;
     float preferredMax = e->preferredMax;
-
-    // safety: if tuning ever gets weird
     if (preferredMin <= 0.0f || preferredMax <= preferredMin) {
-        preferredMin = 6.0f;
-        preferredMax = 10.0f;
+        preferredMin = 5.0f;
+        preferredMax = 8.0f; // fallback band
     }
 
-    float radial = 0.0f;
-    if (L < preferredMin)      radial = +0.4f;  // back away in Z
-    else if (L > preferredMax) radial = -0.4f;  // step forward in Z
+    // --- radialMag is declared here ---
+    float radialMag = 0.0f;
+    if (L < preferredMin)      radialMag = -0.4f; // too close → move away
+    else if (L > preferredMax) radialMag = +0.4f; // too far  → move toward
 
-
-    // --- Sideways oscillation for circling behavior ---
+    // Sideways oscillation to create circling
     float s = std::sin(1.2f * e->stateT + static_cast<float>(i) * 1.1f);
     const float strafeMag = s * 0.5f;
 
-    // Radial (toward/away) + tangential (strafe) in LOCAL space
+    // Combine radial (toP) and tangential (tanL) in LOCAL space
     vec3 stepL{
         toP.x * radialMag + tanL.x * strafeMag,
         0.0f,
         toP.z * radialMag + tanL.z * strafeMag
     };
 
-    // Scale by enemy speed and dt
-    stepL.x *= e->speed * static_cast<float>(dtf);
-    stepL.z *= e->speed * static_cast<float>(dtf);
+    // Scale by speed and dt
+    stepL.x *= e->speed * dtf;
+    stepL.z *= e->speed * dtf;
 
-    // Apply in local space, clamp to enemy half, then convert back to world
+    // Apply in local, clamp to enemy half, then convert back to world
     vec3 eL_new{ eL.x + stepL.x, eL.y, eL.z + stepL.z };
     eL_new = clampToEnemyHalfLocal(eL_new, e->radius);
 
@@ -706,16 +705,17 @@ for (size_t i = 0; i < enemies.size(); ++i) {
 
     e->position = arena_.toWorld(eL_new);
 
-    // --- Face the player (local yaw → world yaw) ---
+    // Face the player (local yaw → world yaw)
     vec3 dL{ pL.x - eL_new.x, 0.0f, pL.z - eL_new.z };
     if (dL.x*dL.x + dL.z*dL.z > 1e-6f) {
         float yawLocalDeg = std::atan2(dL.x, -dL.z) * 180.0f / PI; // 0° = local -Z
         e->yawDeg = worldYawFromLocal(arena_, yawLocalDeg);
     }
 
-    // Animation hint from motion in world space
+    // Drive animation from world-space velocity
     e->setAnimForVelocity(vW);
 }
+
 
 
 // --- Player bullet → Enemy collision (optional knockout/stun) ---
