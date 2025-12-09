@@ -49,7 +49,8 @@ void _menuScene::onEnter() {
     menuModel->initModel(menuModelFile);
 
     menuBullet.speed=pauseBullet.speed = 36.0f;
-    menuBullet.radius = 1.0f;
+    // menuBullet.radius = 1.0f;
+    menuBullet.radius = pauseBullet.radius = kMenuBulletRadius;
 
   //      std::cout << "[menu] onEnter mode=" << (mode==Mode::InGameMenu?"IGM":"MAIN") << "\n";
     menuBackground->skyBoxInit();
@@ -144,9 +145,12 @@ void _menuScene::enterPause() {
         { {  0.0f, -3.0f, -12.0f }, blockRadius, MenuBlock::Type::Quit     },
     };
 
-    pauseBullet.actionTrigger = pauseBullet.READY;
-    pauseBullet.live = false;
-    pauseBullet.t = 0.0f;
+    // pauseBullet.actionTrigger = pauseBullet.READY;
+    // pauseBullet.live = false;
+    // pauseBullet.t = 0.0f;
+    menuBullet.actionTrigger = menuBullet.READY;
+    menuBullet.live = false;
+    menuBullet.t = 0.0f;
 }
 
 
