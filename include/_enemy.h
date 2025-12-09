@@ -138,6 +138,9 @@ public:
                 break;
 
             case State::Throw:
+                std::cout << "[Enemy] THROW from stateT=" << stateT
+          << " dist=" << distToTarget << std::endl;
+
                 if (target) {
                     // aim at chest
                     vec3 tgt{
@@ -183,9 +186,10 @@ public:
         }
 
         // --- Apply movement in WORLD space ---
-        position.x += vW.x;
-        position.y += vW.y;
-        position.z += vW.z;
+        // TEMP: disable enemy locomotion while we debug attack logic
+        // position.x += vW.x;
+        // position.y += vW.y;
+        // position.z += vW.z;
 
         // Use nav space ONLY to clamp back into the arena
         vec3 pL = space.toLocal(position);
