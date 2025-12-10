@@ -122,7 +122,7 @@ private:
  
     // DEBUG INFO //
     int debugPrintInterval = 2000; // milliseconds
-    bool enableDebugging = true;   // allows for debugging controls + options
+    bool enableDebugging = false;   // allows for debugging controls + options
     bool showBoundingBoxes = false; // Toggle bounding box display for debugging
     bool showMapModels = true;     // Toggle map models display for debugging (good for checking bounding boxes)
     bool noclipEnabled = false;    // Toggle noclip mode for debugging
