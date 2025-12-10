@@ -54,7 +54,7 @@ void _sounds::playSounds(char* filename, bool allowOverlap, float volume, float 
 void _sounds::playSounds3D(char* filename, vec3f position, bool allowOverlap, float volume, float pitch)
 {
     if(eng && (!eng->isCurrentlyPlaying(filename) || allowOverlap)) {
-        ISound* sound = eng->play3D(filename,irrklang::vec3df(position.x,position.y,position.z),false,false,true);
+        ISound* sound = eng->play3D(filename,vec3df(position.x,position.y,position.z),false,false,true);
         if (sound) {
             sound->setVolume(volume);
             sound->setPlaybackSpeed(pitch);
@@ -75,10 +75,10 @@ void _sounds::updateListener(vec3f position, vec3f look, vec3f up)
 {
     if (eng) {
         eng->setListenerPosition(
-            irrklang::vec3df(position.x, position.y, position.z),
-            irrklang::vec3df(look.x, look.y, look.z),
-            irrklang::vec3df(0,0,0),
-            irrklang::vec3df(up.x, up.y, up.z)
+            vec3df(position.x, position.y, position.z),
+            vec3df(look.x, look.y, look.z),
+            vec3df(0,0,0),
+            vec3df(up.x, up.y, up.z)
         );
     }
 }
