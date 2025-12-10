@@ -836,6 +836,7 @@ void _level01::update(double dt)
             return (sqr(dx) + sqr(dy) + sqr(dz)) <= (r*r);
         };
 
+        // tick down hurt cooldown
     if (player->hurtCooldown > 0.0f)
         player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dt));
 

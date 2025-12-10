@@ -67,3 +67,66 @@ void _camera::setUpCamera()
               des.x,des.y,des.z,
               up.x, up.y, up.z);
 }
+
+void _camera::updateFPSCamera() {
+    // Calculate forward direction from yaw/pitch
+    float yawRad = rotAngle.x * PI / 180.0f;
+    float pitchRad = rotAngle.y * PI / 180.0f;
+
+    // Forward vector (OpenGL convention: -Z is forward)
+    vec3 forward;
+    forward.x = -sin(yawRad) * cos(pitchRad);  
+    forward.y = sin(pitchRad);
+    forward.z = -cos(yawRad) * cos(pitchRad);  
+
+    // Destination = eye + forward
+    des.x = eye.x + forward.x;
+    des.y = eye.y + forward.y;
+    des.z = eye.z + forward.z;
+}
+
+void _camera::moveFPSForward(float amount) {
+    // Calculate forward vector (ignore pitch for horizontal movement)
+    float yawRad = rotAngle.x * PI / 180.0f;
+    
+    vec3 forward;
+    forward.x = -sin(yawRad);  
+    forward.y = 0.0f;
+    forward.z = -cos(yawRad);  
+    
+    // Normalize
+    float len = sqrt(forward.x * forward.x + forward.z * forward.z);
+    if (len > 0.0001f) {
+        forward.x /= len;
+        forward.z /= len;
+    }
+    
+    // Move eye position
+    eye.x += forward.x * amount;
+    eye.z += forward.z * amount;
+    
+    // Update destination
+    updateFPSCamera();
+}
+
+void _camera::moveFPSStrafe(float amount) {
+    float yawRad = rotAngle.x * PI / 180.0f;
+    
+    vec3 right;
+    right.x = -cos(yawRad);  
+    right.y = 0.0f;
+    right.z = sin(yawRad);   
+    
+    eye.x += right.x * amount;
+    eye.z += right.z * amount;
+    
+    updateFPSCamera();
+}
+
+void _camera::moveFPSUp(float amount) {
+    // Move in world Y axis
+    eye.y += amount;
+    
+    // Update destination
+    updateFPSCamera();
+}

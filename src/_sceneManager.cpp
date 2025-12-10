@@ -3,6 +3,13 @@
 _sceneManager::_sceneManager()
 {
     //ctor
+    // level 00 -> level01
+    LevelRegistry::instance().registerLevel("level00", [](){
+        auto L = std::make_unique<_level00>(); // doesnt need text file for level00
+        L->setNextLevelId("level01");
+        return L;
+    });
+
     // level01 -> level02
     LevelRegistry::instance().registerLevel("level01", [](){
         auto L = std::make_unique<_level01>("levels/level01.txt");
@@ -11,11 +18,14 @@ _sceneManager::_sceneManager()
     });
 
     // level02 -> level03
-    LevelRegistry::instance().registerLevel("level02", [](){
-        auto L = std::make_unique<_level01>("levels/level02.txt");
-        L->setNextLevelId("level03");
-        return L;
-    });
+    // LevelRegistry::instance().registerLevel("level02", [](){
+    //     auto L = std::make_unique<_level01>("levels/level02.txt");
+    //     L->setNextLevelId("level03");
+    //     return L;
+    // });
+    // LevelRegistry::instance().registerLevel("level02", [](){
+    //     return std::make_unique<_level02>();
+    // });
 
     // level03 -> back to main menu
     LevelRegistry::instance().registerLevel("level03", [](){
@@ -211,6 +221,11 @@ LoadLevelScene::LoadLevelScene(std::unique_ptr<ILevel> lvl,
 void LoadLevelScene::onEnter(){
     std::cout << "[load] onEnter: loadAssets begin\n";
 
+    // register level00
+    if (auto* l00 = dynamic_cast<_level00*>(level.get())) {
+        if (loadLevelFn) l00->setRequestNextLevel(loadLevelFn);
+    }
+
     if (auto* l01 = dynamic_cast<_level01*>(level.get())) {
         if (loadLevelFn) l01->setRequestNextLevel(loadLevelFn);
     }
@@ -221,7 +236,8 @@ void LoadLevelScene::onEnter(){
 
 void LoadLevelScene::onExit() {
     if (level) {
-        level->unloadAssets();
+        // Level uses a smart pointer, it auto calls destructors -- calling the unload assets manually can segfault from double-delete
+        //level->unloadAssets();
     }
 }
 
@@ -239,7 +255,7 @@ void LoadLevelScene::render() {
         level->render(flags);
     }
 }
-int LoadLevelScene::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+int LoadLevelScene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN: {
@@ -283,6 +299,9 @@ int LoadLevelScene::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     { static_cast<float>(fx - nx), static_cast<float>(fy - ny), static_cast<float>(fz - nz) }
                 );
             }
+        }
+        case WM_MOUSEMOVE: {
+            if (level) return level->winMsg(hWnd, uMsg, wParam, lParam);
         }
         default:
             return 0;

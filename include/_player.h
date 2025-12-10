@@ -7,6 +7,13 @@
 #include<_spatialNav.h>
 #include<_character.h>
 
+#include<_animation.h>
+#include<_timerPlusPlus.h>
+#include<_model.h>
+
+enum PlayerAnimation {IDLE, WALK};
+enum PlayerThrowAnimation {THROW_NONE, THROW_PREP, THROW_RELEASE};
+
 struct PlayerInput {
     bool moveFwd  = false;
     bool moveBack = false;
@@ -16,21 +23,114 @@ struct PlayerInput {
 struct Player : public Character {
     _3DModelLoader model;
     vec3 position{0,0,0};
+    vec3f rotation = {0.0f,0.0f,0.0f};
+    vec3f vec_scale = {1.0f,1.0f,1.0f};
+    col3f color = {1.0f,1.0f,1.0f};
     float yawDeg = 0.f;
     float speed  = 6.0f;
     float radius = 0.5f;
     float scale = 0.20f;              // world-units per MD2 unit //set once do not touch
     float baseRadiusAtScale1 = 1.50f; // collider for scale==1; //SAME
     float baseYawMD2 = 90.0f;
-    _bullets *ball = new _bullets();
+    _bullets *ball = nullptr;
     float animDt = 1.0f/60.0f;  // last dt passed from level
+    // JANUS - OBJ PLAYER SECTION //
+    PlayerAnimation currentAnimation;
+    PlayerThrowAnimation currentThrowAnimation = THROW_NONE;
+    _model* playerModel = nullptr;
+    _model* ballModel = nullptr;
+    _model* playerNoArmModel = nullptr; // used for idle throwing
+    _animation* walk_body_animation = nullptr;
+    _animation* walk_arm_animation = nullptr;
+    _animation* walk_ball_animation = nullptr;
+    // for throwing animation
+    _animation* throw_prep_arm_animation = nullptr;
+    _animation* throw_prep_ball_animation = nullptr;
+    _timerPlusPlus* animationTimer = nullptr;
+    bool hasBall = true;
+    void initPlayer()
+    {
+        // Initialize player properties
+        //hasBall = false;
+        currentAnimation = IDLE;
+        //health = 100;
+        //collisionBoxOffset = {0.0f, 0.8f, 0.0f};
+        //rotation = {0.0f, 0.0f, 0.0f};
+        //size = {1.0f, 1.0f, 1.0f};
+        // timers
+        animationTimer->reset();
+        // main model
+        playerModel->initModel("", "models/player.obj", _model::CUSTOM);
+        playerModel->enabled = true;
+        playerModel->scale = vec_scale;
+        // ball
+        ballModel->initModel("images/dodgeball.jpg", "models/ball_idle.obj", _model::CUSTOM);
+        ballModel->scale = vec_scale;
+
+        playerNoArmModel->initModel("", "models/player_no_arm.obj", _model::CUSTOM);
+        playerNoArmModel->scale = vec_scale;
+        // collision
+        //collisionBox->initBoundingBox({0.7f, 2.0f, 0.7f}, (position+collisionBoxOffset), size);
+        // animations
+        walk_body_animation->initAnimation("", "models/animations/Walk_Forward/Body/Walk_Forward", 24, 28, 12, playerModel->scale);
+        walk_arm_animation->initAnimation("", "models/animations/Walk_Forward/RightArm/Walk_Forward", 24, 28, 12, playerModel->scale);
+        walk_ball_animation->initAnimation("images/dodgeball.jpg", "models/animations/Walk_Forward/Ball/Walk_Forward", 24, 28, 12, playerModel->scale);
+        throw_prep_arm_animation->initAnimation("", "models/animations/Player_Throw/Prep_Throw_Arm/prep_throw_arm", 48, 24, 1, playerModel->scale);
+        throw_prep_ball_animation->initAnimation("images/dodgeball.jpg", "models/animations/Player_Throw/Prep_Throw_Ball/prep_throw_ball", 48, 24, 1, playerModel->scale);
+        throw_prep_arm_animation->loopAnimation = false;
+        throw_prep_ball_animation->loopAnimation = false;
+    }
+    void drawPlayer()
+    {
+        //collisionBox->position = (position + collisionBoxOffset);
+        switch (currentAnimation) {
+            case WALK:
+                animationTimer->reset();
+                walk_body_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                if (currentThrowAnimation == THROW_PREP) {
+                    throw_prep_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    if (hasBall) {
+                        throw_prep_ball_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    }
+                    break;
+                }
+                walk_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                if (hasBall) {
+                    walk_ball_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                }
+                break;
+            case IDLE:
+                if (currentThrowAnimation == THROW_PREP) {
+                    throw_prep_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    if (hasBall) {
+                        throw_prep_ball_animation->drawAnimation({position.x, position.y, position.z}, rotation);
+                    }
+                    playerNoArmModel->position = {position.x, position.y, position.z};
+                    playerNoArmModel->rotation = rotation;
+                    playerNoArmModel->drawModel();
+                    break;
+                }
+                playerModel->position = {position.x, position.y, position.z};
+                playerModel->rotation = rotation;
+                playerModel->drawModel();
+                if (hasBall) {
+                    ballModel->position = {position.x, position.y, position.z};
+                    ballModel->rotation = rotation;
+                    ballModel->drawModel();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    ////////////////////////////////
 void applyScale(float s) {
     scale  = s;
     radius = baseRadiusAtScale1 * scale;  // keep collider in sync with visual scale
 }
     int life = 5; //abstraction of our collisions. You only get 5 collisions per level
     float hurtCooldown = 0.3f;           // seconds of invulnerability after a hit
-    PlayerInput *playerInput= new PlayerInput();
+    PlayerInput *playerInput= nullptr;
     inline void playerResetLife( int newLife=5) {
         life = newLife;
         hurtCooldown = 0.f;
@@ -118,9 +218,37 @@ void applyScale(float s) {
     inline void renderBall() {
         ball->drawBullet();  // draws a GLUT sphere when live
     }
+    Player() {
+        ball = new _bullets();
+        playerInput = new PlayerInput();
+        //collisionBox = new _boundingBox();
+        playerModel = new _model();
+        ballModel = new _model();
+        walk_body_animation = new _animation();
+        walk_arm_animation = new _animation();
+        walk_ball_animation = new _animation();
+        throw_prep_arm_animation = new _animation();
+        throw_prep_ball_animation = new _animation();
+        animationTimer = new _timerPlusPlus();
+        playerNoArmModel = new _model();
+
+    }
     ~Player() {
-        delete ball; ball = nullptr;
-        delete playerInput; playerInput = nullptr;
+        delete ball; 
+        ball = nullptr;
+        delete playerInput; 
+        playerInput = nullptr;
+
+        //delete collisionBox;
+        delete playerModel;
+        delete ballModel;
+        delete walk_body_animation;
+        delete walk_arm_animation;
+        delete walk_ball_animation;
+        delete animationTimer;
+        delete throw_prep_arm_animation;
+        delete throw_prep_ball_animation;
+        delete playerNoArmModel;
     }
 };
 #endif // _PLAYER_H
