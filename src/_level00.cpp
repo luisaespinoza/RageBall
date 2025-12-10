@@ -21,6 +21,7 @@ _level00::_level00() {
     directorTimer = new _timerPlusPlus();
     ballThrowTimer = new _timerPlusPlus();
     soundEngine = new _sounds();
+    playerDeathTimer = new _timerPlusPlus();
 }
 
 _level00::~_level00() {
@@ -32,7 +33,7 @@ void _level00::loadAssets() {
     // PLAYER INIT //
     player->vec_scale = {0.15f, 0.15f, 0.15f};
     player->initPlayer();
-    player->position = {0.0f, 4.0f, 25.0f};
+    player->position = {0.0f, 10.0f, 25.0f};
     playerHitBox->initBoundingBox({0.25f, 1.0f, 0.25f}, {player->position.x, player->position.y + 1.5f, player->position.z}, {1.0f, 1.0f, 1.0f});
     // ARENA MODELS INTI //
     // models
@@ -75,9 +76,11 @@ void _level00::loadAssets() {
     ballDeleteTimer->reset();
     directorTimer->reset();
     ballThrowTimer->reset();
+    playerDeathTimer->reset();
     // SOUNDS INIT //
     _sounds::initSoundEngine();
-    soundEngine->playMusic("sounds/HighNoon.mp3");
+    soundEngine->playMusic("sounds/level00_music.mp3", musicVolume);
+    soundEngine->playSounds("sounds/level_transition.mp3", false, transitionLevelVolume, 0.8f);
     // start game 
     currentStage = LEVEL00_PLAYING_0;
     updateDirector(true); // force update to spawn initial targets
@@ -125,6 +128,7 @@ void _level00::unloadAssets()
     delete directorTimer; directorTimer = nullptr;
     delete ballThrowTimer; ballThrowTimer = nullptr;
     delete soundEngine; soundEngine = nullptr;
+    delete playerDeathTimer; playerDeathTimer = nullptr;
 }
 
 void _level00::handleKey(UINT uMsg, WPARAM wParam) {
@@ -218,9 +222,10 @@ void _level00::applyCamera() {
 }
 
 void _level00::reset() {
+    soundEngine->stopAllSounds();
     currentStage = LEVEL00_INIT;
     player->position = {0.0f, 4.0f, 25.0f};
-    playerHealth = 5;
+    playerHealth = 3;
     playerLastHitid = -1;
     // delete existing balls/targets/throwers
     for (int i = 0; i < balls.size(); i++) {
@@ -241,6 +246,8 @@ void _level00::reset() {
      // start game 
     currentStage = LEVEL00_PLAYING_0;
     updateDirector(true); // force update to spawn initial targets
+    soundEngine->playMusic("sounds/level00_music.mp3", musicVolume);
+    soundEngine->playSounds("sounds/level_transition.mp3", false, transitionLevelVolume, 0.8f);
 }
 
 void _level00::updateDirector(bool forceUpdate) {
@@ -251,7 +258,7 @@ void _level00::updateDirector(bool forceUpdate) {
                 break;
             case LEVEL00_PLAYING_0:
                 // Spawn 5 static targets at random positions
-                directorTimer->reset();
+                directorTimer->reset();               
                 for (int i = 0; i < 5; i++) {
                     vec3f pos = {RNG::getFloat(-10.0f, 10.0f), 2.0f, RNG::getFloat(-20.0f, 0.0f)};
                     createTarget(pos, 0.0f);
@@ -288,6 +295,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_COMPLETE:
                 levelComplete = true;
                 // transition to next level -> level01
+                soundEngine->stopAllSounds();
                 if (requestNextLevel_ && !nextLevelId_.empty()) {
                     requestNextLevel_(nextLevelId_);
                 }
@@ -301,6 +309,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_PLAYING_0:
                 if (targets.size() == 0) {
                     cout << "All targets cleared! Advancing to next stage." << endl;
+                    soundEngine->playSounds("sounds/level_transition.mp3", false, transitionLevelVolume, 1.0f);
                     targetsHit = 0; 
                     currentStage = LEVEL00_PLAYING_1;
                     updateDirector(true);
@@ -309,6 +318,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_PLAYING_1:
                 if (targets.size() == 0) {
                     cout << "All targets cleared! Advancing to next stage." << endl;
+                    soundEngine->playSounds("sounds/level_transition.mp3", false, transitionLevelVolume, 1.2f);
                     targetsHit = 0; 
                     currentStage = LEVEL00_PLAYING_2;
                     updateDirector(true);
@@ -317,6 +327,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_PLAYING_2:
                 if (throwers.size() == 0) {
                     cout << "All targets cleared! Advancing to next stage." << endl;
+                    soundEngine->playSounds("sounds/level_transition.mp3", false, transitionLevelVolume, 1.4f);
                     targetsHit = 0; 
                     currentStage = LEVEL00_COMPLETE;
                     updateDirector(true);
@@ -338,8 +349,9 @@ void _level00::debugPrint() {
 
 void _level00::update(double dt) {
     if (playerHealth <= 0) {
-        cout << "Player has been defeated! Resetting level." << endl;
-        reset();
+        if (playerDeathTimer->getTicks() >= 3000) {
+            reset();
+        }
         return;
     }
     if (currentStage == LEVEL00_INIT) {
@@ -432,6 +444,11 @@ void _level00::update(double dt) {
             player->throw_prep_ball_animation->resetAnimation();
 
         }
+        if (w || a || s || d) {
+            soundEngine->playSounds("sounds/walk_repeat.mp3",false, walkVolume);
+        } else {
+            soundEngine->stopSound("sounds/walk_repeat.mp3");
+        }
     }
     player->color = {1.0f, 1.0f, 1.0f};
     // PLAYER COLLISION CHECK WITH ENEMY BALLS //
@@ -439,7 +456,13 @@ void _level00::update(double dt) {
             if (balls[i]->isCollidingWith(*playerHitBox) && balls[i]->ballType == BALL_ENEMY && balls[i]->modelId != playerLastHitid) {
                 player->color = {1.0f, 0.0f, 0.0f};
                 playerLastHitid = balls[i]->modelId;
+                soundEngine->playSounds("sounds/player_hit.mp3", false,playerHitVolume);
+                playerDeathTimer->reset();
                 playerHealth--;
+                if (playerHealth <= 0) {
+                    soundEngine->playSounds("sounds/player_death.mp3", false, playerDeathVolume);
+                    cout << "Player has been defeated! Resetting level." << endl;
+                }
                 break;
             }
         }
@@ -480,7 +503,7 @@ void _level00::update(double dt) {
             movementImpulse = true;
             balls[i]->velocity.y = 3.0f;
             if (balls[i]->soundCooldownTimer->getTicks() >= 200) {
-                soundEngine->playSounds3D("sounds/ball_bounce.mp3", balls[i]->position, true, 1.0f);
+                soundEngine->playSounds3D("sounds/ball_bounce.mp3", balls[i]->position, true, ballBounceVolume);
                 balls[i]->soundCooldownTimer->reset();
             }
         }
@@ -556,6 +579,7 @@ void _level00::update(double dt) {
         for (int j = 0; j < balls.size(); j++) {
             if (throwers[i]->isCollidingWith(balls[j]->boundingBoxes[0]) && balls[j]->ballType == BALL_FRIENDLY) {
                 throwers[i]->hitThrower(balls[j]->modelId);
+                soundEngine->playSounds3D("sounds/thrower_hit.mp3", throwers[i]->position, false, throwerHitVolume);
                 break;
             }
         }
@@ -566,6 +590,7 @@ void _level00::update(double dt) {
     // THROWER DELETION //
     for (int i = throwers.size()-1; i >=0 ; i--) {   
         if (throwers[i]->existenceState == _thrower::DEAD) {
+            soundEngine->playSounds3D("sounds/thrower_die.mp3", throwers[i]->position, false, throwerDieVolume);
             delete throwers[i];
             throwers.erase(throwers.begin() + i);
         }

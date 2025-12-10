@@ -31,10 +31,14 @@ void _sounds::dropSoundEngine()
     }
 }
 
-void _sounds::playMusic(char* filename)
+void _sounds::playMusic(char* filename, float volume)
 {
     if (eng) { 
-        eng->play2D(filename,true); 
+        ISound* sound = eng->play2D(filename,true,false,true);
+        if (sound) {
+            sound->setVolume(volume);
+            sound->drop(); 
+        }
     }
 }
 
@@ -80,5 +84,22 @@ void _sounds::updateListener(vec3f position, vec3f look, vec3f up)
             vec3df(0,0,0),
             vec3df(up.x, up.y, up.z)
         );
+    }
+}
+
+void _sounds::stopSound(char* filename)
+{
+    if (eng) {
+        ISoundSource* source = eng->getSoundSource(filename);
+        if (source) {
+            eng->stopAllSoundsOfSoundSource(source);
+        }
+    }
+}
+
+void _sounds::stopAllSounds()
+{
+    if (eng) {     
+        eng->stopAllSounds();
     }
 }

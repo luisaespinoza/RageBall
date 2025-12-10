@@ -20,7 +20,7 @@ class _sounds
         static ISoundEngine *eng;
 
         // Play music -- this loops by default with no overlap
-        void playMusic(char* filename);
+        void playMusic(char* filename, float volume = 1.0f);
         /*
         Plays a given sound effect with fun options!
         -> allowOverlap :: True/False -- Allows multiple instances of the same sound to play over each other
@@ -40,7 +40,10 @@ class _sounds
         void pauseSound(char* filename);
         // Adjusts position for 3D sound rendering -- should be called every update loop
         void updateListener(vec3f position, vec3f look, vec3f up);
-
+        // Stops a given sound effect
+        void stopSound(char* filename);
+        // Stops ALL sounds currently playing
+        void stopAllSounds();
         // Initialize the sound engine -- only needed once, add to loadAssets();
         static void initSoundEngine();
         // Called in WinMain at end before KillWindow() to drestroy static sound engine
