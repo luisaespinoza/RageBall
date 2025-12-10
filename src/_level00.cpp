@@ -20,6 +20,7 @@ _level00::_level00() {
     ballDeleteTimer = new _timerPlusPlus();
     directorTimer = new _timerPlusPlus();
     ballThrowTimer = new _timerPlusPlus();
+    sound = new _sounds();
 }
 
 _level00::~_level00() {
@@ -74,6 +75,9 @@ void _level00::loadAssets() {
     ballDeleteTimer->reset();
     directorTimer->reset();
     ballThrowTimer->reset();
+    // SOUNDS INIT //
+    sound->initSounds();
+    sound->playMusic("sounds/HighNoon.mp3");
     // start game 
     currentStage = LEVEL00_PLAYING_0;
     updateDirector(true); // force update to spawn initial targets
@@ -120,6 +124,7 @@ void _level00::unloadAssets()
     delete textureLoader; textureLoader = nullptr;
     delete directorTimer; directorTimer = nullptr;
     delete ballThrowTimer; ballThrowTimer = nullptr;
+    delete sound; sound = nullptr;
 }
 
 void _level00::handleKey(UINT uMsg, WPARAM wParam) {
@@ -445,8 +450,8 @@ void _level00::update(double dt) {
         }
     }
     // CAMERA HANDLING //
-    characterCamera->des = player->position;
-    characterCamera->eye = {player->position.x, player->position.y + 1.20f, player->position.z + 4.0f};
+    characterCamera->des = {player->position.x + 1.0f, player->position.y + 1.0f, player->position.z};
+    characterCamera->eye = {player->position.x + 1.0f, player->position.y + 1.40f, player->position.z + 3.0f};
     // PHYSICS UPDATE //
     // Update velocity by acceleration
     playerVelocity.x += playerAccel.x * physicsDt; 

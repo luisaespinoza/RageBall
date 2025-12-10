@@ -884,7 +884,7 @@ void _level01::render(const RenderFlags& flags)
         glPopMatrix();
         for (auto& e : enemies) {
 
-                    e->render();           // draws enemy model + its projectile
+             e->render();           // draws enemy model + its projectile
 
         }
         player->render();

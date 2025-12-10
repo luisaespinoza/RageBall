@@ -14,6 +14,7 @@
 #include<_boundingBox.h>
 #include<windowsx.h>    
 #include<_worldObjects.h>
+#include<_sounds.h>
 
 /* Stages for Level00 -- INIT is the loading stage (models/textures/etc) -- needs a loading screen!
 * LEVEL00_INIT = Loading sector. Physics is disabled, controls disabled, etc.
@@ -136,6 +137,8 @@ private:
 
     int playerHealth = 5; // Player health -- could be inside Player class, but trivial
     int playerLastHitid = -1; // to prevent multiple hits from same ball (player only)
+    // SOUNDS //
+    _sounds* sound = nullptr;
 };
 
 #endif // _LEVEL00_H

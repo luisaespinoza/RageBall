@@ -7,8 +7,6 @@ _model::_model()
     ownsResources = true; // single instance owns resources
     texLoader = new _textureLoader();
     model3DLoader = new _objLoader();
-
-
 }
 
 _model::_model(const _model& other)
