@@ -10,7 +10,6 @@
 /obj/
 /out/
 *.o
-*.obj
 *.so
 *.dll
 *.dylib

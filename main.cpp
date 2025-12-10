@@ -13,11 +13,24 @@
 #include <iostream>
 #include <windows.h>	// Header File For Windows
 #include <gl/gl.h>
-// #include <gl/glu.h>
+#include <_common.h>
+
+#include <gl/glu.h>
 #include <_sceneManager.h>
 #include <_menuScene.h>
 #include <_scene.h>
 #include <_level01.h>
+#include <_level00.h>
+
+
+PFNGLGENBUFFERSPROC glGenBuffers = nullptr;
+PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
+PFNGLBUFFERDATAPROC glBufferData = nullptr;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
+
+std::mt19937 RNG::generator;
+bool RNG::initialized = false;
+
 #include <_landingPage.h>
 #include <_landingPageHandler.h>
 
@@ -232,6 +245,13 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;						                // Return FALSE
 	}
 
+
+	// Load OpenGL functions
+	glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+    glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+    glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+    glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
+
 	ShowWindow(hWnd,SW_SHOW);					            // Show The Window
 	SetForegroundWindow(hWnd);					            // Slightly Higher Priority
 	SetFocus(hWnd);							                // Sets Keyboard Focus To The Window
@@ -315,8 +335,12 @@ LRESULT CALLBACK WndProc(
 
 		case WM_SIZE:				// Resize The OpenGL Window
 		{
-          scenes.forwardWindowMessage(hWnd,uMsg,wParam,lParam);
-         // LoWord=Width, HiWord=Height
+			int newWidth = LOWORD(lParam);  // LoWord=Width
+			int newHeight = HIWORD(lParam); // HiWord=Height
+
+			// resize screen
+			scenes.handleResizeEvent(newWidth, newHeight);
+          	scenes.forwardWindowMessage(hWnd,uMsg,wParam,lParam);                         // LoWord=Width, HiWord=Height
 			return 0;			    // Jump Back
 		}
 
@@ -359,11 +383,11 @@ int WINAPI WinMain(
 	int	fullscreenWidth  = GetSystemMetrics(SM_CXSCREEN);
     int	fullscreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
+char cwd[MAX_PATH];
+_getcwd(cwd, MAX_PATH);
+RNG::init();
 
-
-    char cwd[MAX_PATH];
-    _getcwd(cwd, MAX_PATH);
-    std::cout << "CWD: " << cwd << std::endl;
+std::cout << "CWD: " << cwd << std::endl;
 
         // Ask The User Which Screen Mode They Prefer
     /*	if (MessageBox(NULL," Would You Like To Run In Fullscreen Mode?", "Start FullScreen?",MB_YESNO|MB_ICONQUESTION)==IDNO)
@@ -439,7 +463,7 @@ int WINAPI WinMain(
                 {
                     if(!gameplayInit)
                     {
-                       scenes.bootMainMenu("level01");
+                       scenes.bootMainMenu("level00");
                        gameplayInit = true;
                     }
                     // Boot into main menu; when "Start" is clicked, load "gameplay_intro"
@@ -451,22 +475,28 @@ int WINAPI WinMain(
 		}
 	}
 
-	if (keys[VK_F1])		    // Is F1 Being Pressed?
-    {
-        keys[VK_F1]=FALSE;	    // If So Make Key FALSE
-        KillGLWindow();		    // Kill Our Current Window
-        fullscreen=!fullscreen;	// Toggle Fullscreen / Windowed Mode
-        // Recreate Our OpenGL Window
-		if (!CreateGLWindow("Game Engine Lesson 01",fullscreenWidth,fullscreenHeight,256,fullscreen))
-        {
-            return 0;	        // Quit If Window Was Not Created
+		{	
+			if (keys[VK_F1])		    // Is F1 Being Pressed?
+			{
+				keys[VK_F1]=FALSE;	    // If So Make Key FALSE
+				KillGLWindow();		    // Kill Our Current Window
+				fullscreen=!fullscreen;	// Toggle Fullscreen / Windowed Mode
+
+				// Recreate Our OpenGL Window
+
+				if (!CreateGLWindow("Game Engine Lesson 01",fullscreenWidth,fullscreenHeight,256,fullscreen))
+				{
+					return 0;	        // Quit If Window Was Not Created
+				}
+				scenes.initlGL();
+				scenes.applyPerspective(fullscreenWidth, fullscreenHeight);
+			}
 		}
-    }
+	
 
 	// Shutdown
 	KillGLWindow();					    // Kill The Window
     if (gCrosshair) { DestroyCursor(gCrosshair); gCrosshair = nullptr; }
 	return (msg.wParam);				// Exit The Program
-
 
 }
