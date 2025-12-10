@@ -138,7 +138,8 @@ private:
     int playerHealth = 5; // Player health -- could be inside Player class, but trivial
     int playerLastHitid = -1; // to prevent multiple hits from same ball (player only)
     // SOUNDS //
-    _sounds* sound = nullptr;
+    int targetsHit = 0; // changes sound pitch for cool effect
+    _sounds* soundEngine = nullptr;
 };
 
 #endif // _LEVEL00_H

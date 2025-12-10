@@ -20,7 +20,7 @@ _level00::_level00() {
     ballDeleteTimer = new _timerPlusPlus();
     directorTimer = new _timerPlusPlus();
     ballThrowTimer = new _timerPlusPlus();
-    sound = new _sounds();
+    soundEngine = new _sounds();
 }
 
 _level00::~_level00() {
@@ -76,8 +76,8 @@ void _level00::loadAssets() {
     directorTimer->reset();
     ballThrowTimer->reset();
     // SOUNDS INIT //
-    sound->initSounds();
-    sound->playMusic("sounds/HighNoon.mp3");
+    _sounds::initSoundEngine();
+    soundEngine->playMusic("sounds/HighNoon.mp3");
     // start game 
     currentStage = LEVEL00_PLAYING_0;
     updateDirector(true); // force update to spawn initial targets
@@ -124,7 +124,7 @@ void _level00::unloadAssets()
     delete textureLoader; textureLoader = nullptr;
     delete directorTimer; directorTimer = nullptr;
     delete ballThrowTimer; ballThrowTimer = nullptr;
-    delete sound; sound = nullptr;
+    delete soundEngine; soundEngine = nullptr;
 }
 
 void _level00::handleKey(UINT uMsg, WPARAM wParam) {
@@ -301,6 +301,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_PLAYING_0:
                 if (targets.size() == 0) {
                     cout << "All targets cleared! Advancing to next stage." << endl;
+                    targetsHit = 0; 
                     currentStage = LEVEL00_PLAYING_1;
                     updateDirector(true);
                 }
@@ -308,6 +309,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_PLAYING_1:
                 if (targets.size() == 0) {
                     cout << "All targets cleared! Advancing to next stage." << endl;
+                    targetsHit = 0; 
                     currentStage = LEVEL00_PLAYING_2;
                     updateDirector(true);
                 }
@@ -315,6 +317,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_PLAYING_2:
                 if (throwers.size() == 0) {
                     cout << "All targets cleared! Advancing to next stage." << endl;
+                    targetsHit = 0; 
                     currentStage = LEVEL00_COMPLETE;
                     updateDirector(true);
                 }
@@ -450,8 +453,8 @@ void _level00::update(double dt) {
         }
     }
     // CAMERA HANDLING //
-    characterCamera->des = {player->position.x + 1.0f, player->position.y + 1.0f, player->position.z};
-    characterCamera->eye = {player->position.x + 1.0f, player->position.y + 1.40f, player->position.z + 3.0f};
+    characterCamera->des = {player->position.x + 0.5f, player->position.y + 1.2f, player->position.z};
+    characterCamera->eye = {player->position.x + 0.5f, player->position.y + 1.2f, player->position.z + 3.0f};
     // PHYSICS UPDATE //
     // Update velocity by acceleration
     playerVelocity.x += playerAccel.x * physicsDt; 
@@ -463,10 +466,11 @@ void _level00::update(double dt) {
     player->position.z += playerVelocity.z * physicsDt;
     // update player hitbox
     playerHitBox->position = {player->position.x, player->position.y+0.5f, player->position.z};
-    // update balls hitboxes
+    // update sound engine listener position
+    soundEngine->updateListener({player->position.x, player->position.y + 0.5f, player->position.z}, {characterCamera->des.x, characterCamera->des.y, characterCamera->des.z}, {0.0f, 1.0f, 0.0f});
     // PHYSICS UPDATE - BALLS //
     for (int i = 0; i < balls.size(); i++) {
-        vector<_boundingBox::collisionType> ballCollisions = main_court->checkCollisionWith(balls[i]->boundingBoxes[0]);
+        vector<_boundingBox::collisionType> ballCollisions = balls[i]->checkCollisionWith(main_court->boundingBoxes[0]);
         bool movementImpulse = false; // if true prevents collision to allow for movement to adjust
         if (std::count(ballCollisions.begin(), ballCollisions.end(), _boundingBox::POS_Y) == 0) {
             // ball in air
@@ -475,6 +479,10 @@ void _level00::update(double dt) {
             // bounce
             movementImpulse = true;
             balls[i]->velocity.y = 3.0f;
+            if (balls[i]->soundCooldownTimer->getTicks() >= 200) {
+                soundEngine->playSounds3D("sounds/ball_bounce.mp3", balls[i]->position, true, 1.0f);
+                balls[i]->soundCooldownTimer->reset();
+            }
         }
         if (std::count(ballCollisions.begin(), ballCollisions.end(), _boundingBox::POS_X) > 0) {
             // ball on wall X+
@@ -518,6 +526,9 @@ void _level00::update(double dt) {
         for (int j = 0; j < balls.size(); j++) {
             if (targets[i]->isCollidingWith(balls[j]->boundingBoxes[0]) && balls[j]->ballType == BALL_FRIENDLY) {
                 targets[i]->targetHit();
+                targetsHit++;
+                cout << 0.5f + targets.size()*0.2f << endl;
+                soundEngine->playSounds3D("sounds/target_hit.mp3", {targets[i]->position.x, targets[i]->position.y, targets[i]->position.z}, false, 1.0f, 1.5f - (0.2f * targets.size()));
                 break;
             }
         }
