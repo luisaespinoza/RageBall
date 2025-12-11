@@ -500,3 +500,20 @@
 	<_common.h>
 	<_textureloader.h>
 
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_gameoverhandler.cpp
+	"_gameOverHandler.h"
+
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_gameoverhandler.h
+	<_common.h>
+	<_gameOverScene.h>
+
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_gameoverscene.h
+	<_common.h>
+	<_textureloader.h>
+
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_skysphere.cpp
+	"_skysphere.h"
+
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_sounds.cpp
+	"_sounds.h"
+
