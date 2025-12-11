@@ -151,7 +151,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		dmScreenSettings.dmSize=sizeof(dmScreenSettings);	// Size Of The Devmode Structure
 		dmScreenSettings.dmPelsWidth	= width;		    // Selected Screen Width
 		dmScreenSettings.dmPelsHeight	= height;		    // Selected Screen Height
-		dmScreenSettings.dmBitsPerPel	= bits;			    // Selected Bits Per Pixel
+		dmScreenSettings.dmBitsPerPel	= bits;			    //  Selected Bits Per Pixel
 		dmScreenSettings.dmFields=DM_BITSPERPEL|DM_PELSWIDTH|DM_PELSHEIGHT;
 
 		dwExStyle=WS_EX_APPWINDOW;				            // Window Extended Style

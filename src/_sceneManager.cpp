@@ -13,7 +13,7 @@ _sceneManager::_sceneManager()
     // level01 -> level02
     LevelRegistry::instance().registerLevel("level01", [](){
         auto L = std::make_unique<_level01>("levels/level01.txt");
-        L->setNextLevelId("level02");
+        L->setNextLevelId("menu");
         return L;
     });
 
@@ -194,12 +194,25 @@ void _sceneManager::clearAllScenes()
 }
 void _sceneManager::setCurrentLevel(const std::string& levelId)
 {
+    // "menu" = GAME OVER / hard reset back to landing page
+    if (levelId == "menu") {
+        // Drop any preserved gameplay and nuke the stack
+        preservedScene_.reset();
+        clearAllScenes();
+ 
+
+        // Boot the landing menu just like fresh startup
+        bootMainMenu("level00");   // change "level01" if your first level id changes
+        return;
+    }
+
     auto lvl = LevelRegistry::instance().create(levelId);
     auto loader = [this](const std::string& nextId){
         this->post([this, nextId]{ this->setCurrentLevel(nextId); });
     };
     setCurrentScene(std::make_unique<LoadLevelScene>(std::move(lvl), loader));
 }
+
 
 LevelRegistry& LevelRegistry::instance() {
   static LevelRegistry R; return R;

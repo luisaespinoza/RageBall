@@ -20,6 +20,7 @@ _level00::_level00() {
     ballDeleteTimer = new _timerPlusPlus();
     directorTimer = new _timerPlusPlus();
     ballThrowTimer = new _timerPlusPlus();
+
     soundEngine = new _sounds();
     playerDeathTimer = new _timerPlusPlus();
     skySphere = new _skySphere();
@@ -79,6 +80,8 @@ void _level00::loadAssets() {
     ballDeleteTimer->reset();
     directorTimer->reset();
     ballThrowTimer->reset();
+    // start game
+    currentStage = LEVEL00_PLAYING_0;
     playerDeathTimer->reset();
     // SOUNDS INIT //
     _sounds::initSoundEngine();
@@ -195,14 +198,14 @@ int _level00::winMsg(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
             int x = GET_X_LPARAM(lParam);
             int y = GET_Y_LPARAM(lParam);
-            
+
             if (firstMouse) {
                 lastMouseX = x;
                 lastMouseY = y;
-                firstMouse = false; 
+                firstMouse = false;
                 return 0;
             }
-            
+
             int deltaX = x - lastMouseX;
             int deltaY = y - lastMouseY;
             lastMouseX = x;
@@ -211,10 +214,10 @@ int _level00::winMsg(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 const float sensitivity = 0.15f;
                 noclipCamera->rotAngle.x -= deltaX * sensitivity;
                 noclipCamera->rotAngle.y -= deltaY * sensitivity;
-                
+
                 if (noclipCamera->rotAngle.y > 89.0f)  noclipCamera->rotAngle.y = 89.0f;
                 if (noclipCamera->rotAngle.y < -89.0f) noclipCamera->rotAngle.y = -89.0f;
-                
+
                 noclipCamera->updateFPSCamera();
             }
             return 0;
@@ -248,7 +251,7 @@ void _level00::reset() {
         throwers[i] = nullptr;
     }
     throwers.clear();
-     // start game 
+     // start game
     currentStage = LEVEL00_PLAYING_0;
     updateDirector(true); // force update to spawn initial targets
     soundEngine->playMusic("sounds/level00_music.mp3", musicVolume);
@@ -298,7 +301,7 @@ void _level00::updateDirector(bool forceUpdate) {
                 }
                 break;
             case LEVEL00_COMPLETE:
-                levelComplete = true;
+                //levelComplete = true; //this bool does nothing
                 // transition to next level -> level01
                 soundEngine->stopAllSounds();
                 if (requestNextLevel_ && !nextLevelId_.empty()) {
@@ -363,6 +366,7 @@ void _level00::update(double dt) {
         // Loading stage - skip updates
         return;
     }
+    bool enableDebugging = true;
     // INPUT HANDLING //
     float physicsDt = physicsTimer->getTicks()/1000.0f; // convert ms to s
 
@@ -373,6 +377,8 @@ void _level00::update(double dt) {
     const bool space = (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
     const bool shift = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
     const bool leftMouse = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+    const bool quickLevel2 = (GetAsyncKeyState(VK_F2) & 0x8000) != 0;
+
 
     float gravity = -9.81f; // gravity acceleration
     float moveSpeedCamera = 8.0f;
@@ -380,6 +386,14 @@ void _level00::update(double dt) {
     float ballSpeed = 0.5f;
     bool jumpImpulse = false;
     player->currentAnimation = IDLE;
+    // DEBUG: quick transition to LEVEL00_PLAYING_2
+    if (enableDebugging && quickLevel2 && keyTimer->getTicks() > 300) {
+        std::cout << "DEBUG: Forcing transition to LEVEL00_PLAYING_2" << std::endl;
+        currentStage = LEVEL00_COMPLETE;
+        updateDirector(true); // spawn level 2 content using existing logic
+        keyTimer->reset();
+    }
+
     // COLLISION CHECKING //
     // we get a vector of ALL collisions, which affects controls
     vector<_boundingBox::collisionType> collisions = main_court->checkCollisionWith(*playerHitBox);
@@ -393,22 +407,22 @@ void _level00::update(double dt) {
         if (space) { noclipCamera->moveFPSUp(moveSpeedCamera*physicsDt); }
         if (shift) { noclipCamera->moveFPSUp(-moveSpeedCamera*physicsDt); }
     } else {
-        if (w && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_Z) == collisions.end()) { 
+        if (w && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_Z) == collisions.end()) {
             player->position.z += -playerMoveSpeed * physicsDt;
             player->rotation.y = 180.0f;
             player->currentAnimation = WALK;
         }
-        if (s && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_Z) == collisions.end()) { 
+        if (s && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_Z) == collisions.end()) {
             player->position.z += playerMoveSpeed * physicsDt;
             player->rotation.y = 0.0f;
             player->currentAnimation = WALK;
         }
-        if (a && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_X) == collisions.end()) { 
+        if (a && std::find(collisions.begin(), collisions.end(), _boundingBox::POS_X) == collisions.end()) {
             player->position.x += -playerMoveSpeed * physicsDt;
             player->rotation.y = 270.0f;
             player->currentAnimation = WALK;
         }
-        if (d && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_X) == collisions.end()) { 
+        if (d && std::find(collisions.begin(), collisions.end(), _boundingBox::NEG_X) == collisions.end()) {
             player->position.x += playerMoveSpeed * physicsDt;
             player->rotation.y = 90.0f;
             player->currentAnimation = WALK;
@@ -417,7 +431,7 @@ void _level00::update(double dt) {
             playerVelocity.y = 5.0f; // jump impulse
             jumpImpulse = true;
         }
-        // Diagonal Movement Adjustments    
+        // Diagonal Movement Adjustments
         if (w && a) {
             player->rotation.y = 225.0f;
         }
@@ -440,7 +454,7 @@ void _level00::update(double dt) {
                 if (ballTimer->getTicks() >= 500) {
                     createBall(BALL_FRIENDLY, {player->position.x, player->position.y, player->position.z}, 10.0f);
                     ballTimer->reset();
-                } 
+                }
             }
             ballPower = 0.0f;
             ballThrowTimer->reset();
@@ -485,12 +499,12 @@ void _level00::update(double dt) {
     characterCamera->eye = {player->position.x + 0.5f, player->position.y + 1.2f, player->position.z + 3.0f};
     // PHYSICS UPDATE //
     // Update velocity by acceleration
-    playerVelocity.x += playerAccel.x * physicsDt; 
-    playerVelocity.y += playerAccel.y * physicsDt; 
+    playerVelocity.x += playerAccel.x * physicsDt;
+    playerVelocity.y += playerAccel.y * physicsDt;
     playerVelocity.z += playerAccel.z * physicsDt;
     // Update position by velocity
-    player->position.x += playerVelocity.x * physicsDt; 
-    player->position.y += playerVelocity.y * physicsDt; 
+    player->position.x += playerVelocity.x * physicsDt;
+    player->position.y += playerVelocity.y * physicsDt;
     player->position.z += playerVelocity.z * physicsDt;
     // update player hitbox
     playerHitBox->position = {player->position.x, player->position.y+0.5f, player->position.z};
@@ -516,7 +530,7 @@ void _level00::update(double dt) {
             // ball on wall X+
             movementImpulse = true;
             balls[i]->velocity.x = ballSpeed;
-        } 
+        }
         if (std::count(ballCollisions.begin(), ballCollisions.end(), _boundingBox::NEG_X) > 0) {
             // ball on wall X-
             movementImpulse = true;
@@ -526,7 +540,7 @@ void _level00::update(double dt) {
             // ball on wall Z+
             movementImpulse = true;
             balls[i]->velocity.z = ballSpeed;
-        } 
+        }
         if (std::count(ballCollisions.begin(), ballCollisions.end(), _boundingBox::NEG_Z) > 0) {
             // ball on wall Z-
             movementImpulse = true;
@@ -534,17 +548,17 @@ void _level00::update(double dt) {
         }
         balls[i]->updateModel(physicsDt);
         // move bounding box
-        balls[i]->boundingBoxes[0].position = {balls[i]->position.x, balls[i]->position.y, balls[i]->position.z};  
+        balls[i]->boundingBoxes[0].position = {balls[i]->position.x, balls[i]->position.y, balls[i]->position.z};
     }
     // DELETION - BALLS //
-    for (int i = balls.size()-1; i >=0 ; i--) {   
+    for (int i = balls.size()-1; i >=0 ; i--) {
         if (balls[i]->position.y < -15.0f) {
             delete balls[i];
             balls.erase(balls.begin() + i);
         } else if (ballDeleteTimer->getTicks() - balls[i]->spawnTime >= balls[i]->lifeLength * 1000.0f) {
             delete balls[i];
-            balls.erase(balls.begin() + i);      
-        } 
+            balls.erase(balls.begin() + i);
+        }
     }
     // TARGET UPDATES //
     for (int i = 0; i < targets.size(); i++) {
@@ -564,7 +578,7 @@ void _level00::update(double dt) {
         targets[i]->boundingBoxes[0].position = targets[i]->position;
     }
     // TARGET DELETION //
-    for (int i = targets.size()-1; i >=0 ; i--) {   
+    for (int i = targets.size()-1; i >=0 ; i--) {
         if (targets[i]->state == DEAD) {
             delete targets[i];
             targets.erase(targets.begin() + i);
@@ -576,7 +590,7 @@ void _level00::update(double dt) {
         throwers[i]->updateModel(physicsDt);
         // look for attack
         if (throwers[i]->throwBall) {
-            createBall(BALL_ENEMY, {throwers[i]->position.x, throwers[i]->position.y+2.0f, throwers[i]->position.z}, RNG::getFloat(7.0f, 14.0f)); 
+            createBall(BALL_ENEMY, {throwers[i]->position.x, throwers[i]->position.y+2.0f, throwers[i]->position.z}, RNG::getFloat(7.0f, 14.0f));
             throwers[i]->throwBall = false;
             throwers[i]->throwInterval = RNG::getInt(2, 7); // throw every 2-5 seconds
         }
@@ -593,7 +607,7 @@ void _level00::update(double dt) {
         throwers[i]->boundingBoxes[0].position.y = throwers[i]->position.y + 1.5f;
     }
     // THROWER DELETION //
-    for (int i = throwers.size()-1; i >=0 ; i--) {   
+    for (int i = throwers.size()-1; i >=0 ; i--) {
         if (throwers[i]->existenceState == _thrower::DEAD) {
             soundEngine->playSounds3D("sounds/thrower_die.mp3", throwers[i]->position, false, throwerDieVolume);
             delete throwers[i];
@@ -645,7 +659,7 @@ void _level00::render(const RenderFlags& flags) {
         }
     }
     if (showMapModels) {
-        player->drawPlayer();      
+        player->drawPlayer();
         main_court->drawModel();
         outer_court->drawModel();
         bleachers->drawModel();
@@ -694,10 +708,10 @@ void _level00::createBall(BallType type, vec3f position, float velocity) {
     if (type == BALL_FRIENDLY) {
         // normalize mouse coords between -1 and 1
         // -1 = LEFT or BOTTOM, 1 = RIGHT or TOP
-        float ballVelocity = velocity * ballPower; 
+        float ballVelocity = velocity * ballPower;
         float mouseXNorm = (2.0f * lastMouseX) / windowWidth - 1.0f;
         float mouseYNorm = 1.0f - (2.0f * lastMouseY) / windowHeight;
-        
+
         _balls* newBall = new _balls(*ballPrototype); // copy prototype
         newBall->ballType = type;
         newBall->spawnTime = ballDeleteTimer->getTicks();

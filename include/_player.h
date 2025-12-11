@@ -171,6 +171,8 @@ void applyScale(float s) {
         vec3 pL = space.toLocal(newPos);
         pL = space.clampLocal(pL, radius);
         position = space.toWorld(pL);
+
+        Character::position = position;
     }
 
     void render() {

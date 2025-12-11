@@ -6,6 +6,7 @@
 #include <_spatialNav.h>
 #include "_character.h"
 #include<_3dmodelloader.h>
+#include<_player.h>
 template <typename T>
 inline const T& clamp(const T& v, const T& lo, const T& hi) {
     return (v < lo) ? lo : (v > hi ? hi : v);
@@ -35,7 +36,8 @@ public:
     void setAnimForVelocity(const vec3& vW) override;
 
     // dependencies
-    const Character* target = nullptr;
+    // const Character* target = nullptr;
+    const Player* target = nullptr;
     std::function<_bullets::TrajectoryFn()> makeTrajectory = nullptr;
 
     // tuning
@@ -43,81 +45,137 @@ public:
     float fovDeg       = 120.f;
     float throwPeriod  = 1.4f;
     float windupTime   = 0.25f;
-    float preferredMin = 7.0f;
-    float preferredMax = 12.0f;
+    float preferredMin = 6.0f;
+    float preferredMax = 16.0f;
     float strafeSpeed  = 1.2f;
     float dangerRadius = 1.2f;
     // runtime
     State state = State::Patrol;
     float stateT = 0.f;
+    float cooldownMin = 1.0f;   // minimum seconds before next attack
+    float cooldownMax = 5.0f;   // maximum seconds
+    float cooldownTarget = 2.0f; // chosen each time we enter Cooldown
+
 
     void render() override;
     template<typename Space>
-    void updateAI(double dt, const Space& space) {
-        // cooldown tick
-        if (hurtCooldown > 0.f) hurtCooldown = std::max(0.f, hurtCooldown - (float)dt);
+ void updateAI(double dt, const Space& space) {
+        // Local intent velocity in WORLD space now
+        vec3 vW{0,0,0};
 
-        // local intent velocity for this frame (in 'space' local coords)
-        vec3 vL{0,0,0};
+        // --- Sense player in WORLD space ---
+        bool  sees         = false;
+        float distToTarget = 1e9f;
+        vec3  toT{0,0,0};
 
-        // ---- SENSING (FOV uses ENEMY FACING, not space forward) ----
-        bool sees = false;
         if (target) {
-            // world vector to target (XZ plane)
-            vec3 toT{ target->position.x - position.x, 0.f, target->position.z - position.z };
-            float d = std::sqrt(toT.x*toT.x + toT.z*toT.z);
+            toT = { target->position.x - position.x,
+                    0.f,
+                    target->position.z - position.z };
 
-            if (d < viewDistance) {
-                // enemy's world forward from its own yaw
+            distToTarget = std::sqrt(toT.x*toT.x + toT.z*toT.z);
+
+            if (distToTarget > 1e-3f) {
+                // FOV check using enemy yaw + world-space to-target
                 const float yr = yawDeg * (3.1415926535f / 180.f);
                 vec3 fwdW{ std::sin(yr), 0.f, -std::cos(yr) };
 
-                const float fL = std::sqrt(fwdW.x*fwdW.x + fwdW.z*fwdW.z);
-                const float cosA = (fwdW.x*toT.x + fwdW.z*toT.z) / (std::max(1e-6f, fL) * std::max(1e-6f, d));
-                const float angDeg = std::acos(clamp(cosA, -1.f, 1.f)) * 180.f / 3.1415926535f;
+                const float fL   = std::sqrt(fwdW.x*fwdW.x + fwdW.z*fwdW.z);
+                const float cosA = (fwdW.x*toT.x + fwdW.z*toT.z)
+                                 / (std::max(1e-6f, fL) * std::max(1e-6f, distToTarget));
+                const float angDeg = std::acos(clamp(cosA, -1.f, 1.f))
+                                   * 180.f / 3.1415926535f;
 
-                sees = (angDeg <= 0.5f * fovDeg);
+                sees = (distToTarget < viewDistance && angDeg <= 0.5f * fovDeg);
             }
         }
 
-        if (sees) state = (state == State::Cooldown ? State::Cooldown : State::Chase);
-
+        // advance state timer
         stateT += (float)dt;
 
-        switch (state) {
-        case State::Patrol:
-            // simple idle: no movement by default (plug your own patrol later)
-            vL = {0,0,0};
-            if (sees) { state = State::Windup; stateT = 0.f; }
-            break;
-
-        case State::Chase:
-            if (target) {
-                // chase in LOCAL coordinates of the space
-                vec3 pL = space.toLocal(position);
-                vec3 tL = space.toLocal(target->position);
-                vec3 delta{ tL.x - pL.x, 0.f, tL.z - pL.z };
-                float L = std::sqrt(delta.x*delta.x + delta.z*delta.z);
-                if (L > 1e-3f) { delta.x/=L; delta.z/=L; }
-                vL = { delta.x * speed * (float)dt, 0.f, delta.z * speed * (float)dt };
+        // --- State transitions using LOS + radius ---
+        if (!target || !sees) {
+            // lost sight: go back to Patrol unless in Cooldown or Stunned
+            if (state != State::Cooldown && state != State::Stunned) {
+                state = State::Patrol;
             }
-            if (stateT > windupTime) { state = State::Throw; stateT = 0.f; }
-            break;
+        } else {
+            // see the player
+            if (state == State::Patrol || state == State::Chase) {
+                if (distToTarget > preferredMax) {
+                    state = State::Chase;   // too far: keep closing in
+                } else if (state != State::Cooldown) {
+                    state  = State::Windup; // close enough: start attack
+                    stateT = 0.f;
+                }
+            }
+        }
 
-        case State::Windup:
-            vL = {0,0,0};
-            if (stateT >= windupTime) { state = State::Throw; stateT = 0.f; }
-            break;
+        // --- Per-state behavior ---
+        switch (state) {
+            case State::Patrol:
+                vW = {0,0,0};
+                break;
 
-        case State::Throw:
+            case State::Chase:
+                if (target && distToTarget > 1e-3f) {
+                    // world-space chase direction
+                    vec3 dir = { toT.x / distToTarget, 0.f, toT.z / distToTarget };
+                    vW = { dir.x * speed * (float)dt,
+                           0.f,
+                           dir.z * speed * (float)dt };
+
+                    // once inside radius, go to windup
+                    if (distToTarget <= preferredMax) {
+                        state  = State::Windup;
+                        stateT = 0.f;
+                    }
+                }
+                break;
+
+            case State::Windup:
+                vW = {0,0,0};
+                if (stateT >= windupTime) {
+                    state  = State::Throw;
+                    stateT = 0.f;
+                }
+                break;
+
+            case State::Throw:
             if (target) {
-                // aim at target chest in WORLD space
-                vec3 tgt{ target->position.x, target->position.y + 1.2f*target->radius, target->position.z };
+                // 1) Decide where we want to throw: player chest
+                vec3 tgt{
+                    target->position.x,
+                    target->position.y + 1.2f * target->radius,
+                    target->position.z
+                };
 
-                // init projectile
-                throwAt(tgt, /*speed*/18.f, /*spreadDeg*/3.f);
+                // 2) Start like Player::throwAt: src/des/pos/speed/spread
+                ball.src   = position;
+                ball.des   = tgt;
+                ball.pos   = ball.src;
+                ball.speed = 18.0f;   // same as your previous speed
+                ball.coneHalfAngleDeg = 3.0f;
 
-                // muzzle along ENEMY FACING (not space forward)
+                // 3) Compute normalized direction to target
+                vec3 d{
+                    tgt.x - position.x,
+                    tgt.y - position.y,
+                    tgt.z - position.z
+                };
+                float L = std::sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+                if (L > 1e-6f) {
+                    d.x /= L; d.y /= L; d.z /= L;
+                }
+                ball.dir = d;
+
+                // 4) Reset timing and mark as "fired"
+                ball.t        = 0.0f;
+                ball.traveled = 0.0f;
+                ball.live     = true;
+                ball.actionTrigger = ball.SHOOT;  // <-- match Player
+
+                // 5) Adjust muzzle to be in front of the enemy (like your old code)
                 const float yr = yawDeg * (3.1415926535f / 180.f);
                 vec3 fwdW{ std::sin(yr), 0.f, -std::cos(yr) };
                 vec3 muzzle{
@@ -125,54 +183,59 @@ public:
                     position.y + 1.20f * radius,
                     position.z + fwdW.z * (0.30f * radius)
                 };
-                ball.src = muzzle; ball.pos = muzzle;
 
-                // dodgeball size (same logic you chose)
+                ball.src    = muzzle;
+                ball.pos    = muzzle;
                 ball.radius = std::max(0.05f, 2.5f * radius);
-
-                // level-defined trajectory (fallback: straight)
                 ball.setTrajectory(makeTrajectory ? makeTrajectory()
                                                   : Trajectory_Straight());
 
-                state = State::Cooldown; stateT = 0.f;
+                // (optional debug)
+                // std::cout << "[Enemy] spawn ball live=" << ball.live
+                //           << " pos=(" << ball.pos.x << "," << ball.pos.y << "," << ball.pos.z << ")"
+                //           << " r=" << ball.radius << "\n";
+
+                // 6) Go to cooldown
+                // choose random cooldown between min and max
+                float t01 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX); // [0,1]
+                cooldownTarget = cooldownMin + t01 * (cooldownMax - cooldownMin);                state  = State::Cooldown;
+                stateT = 0.f;
             }
+            vW = {0,0,0};
             break;
 
-        case State::Cooldown:
-            vL = {0,0,0};
-            if (stateT >= throwPeriod) { state = State::Windup; stateT = 0.f; }
-            break;
 
-        case State::Stunned:
-            vL = {0,0,0};
-            break;
+            case State::Cooldown:
+                stateT += dt;
+
+                if (stateT >= cooldownTarget) {
+                    state  = State::Chase;   // or Patrol, whatever you want next
+                    stateT = 0.0f;
+                }
+
+                vW = {0,0,0}; // no movement during cooldown (for now)
+                break;
+
+            case State::Stunned:
+                vW = {0,0,0};
+                break;
         }
-                // ---- Move & clamp using SPACE HELPERS ----
-        // Convert the local intent to a world delta via the space transform
+
+        // --- Apply movement in WORLD space ---
+        // TEMP: disable enemy locomotion while we debug attack logic
+        // position.x += vW.x;
+        // position.y += vW.y;
+        // position.z += vW.z;
+
+        // Use nav space ONLY to clamp back into the arena
         vec3 pL = space.toLocal(position);
-        vec3 w0 = space.toWorld(pL);
-        vec3 w1 = space.toWorld({ pL.x + vL.x, pL.y + vL.y, pL.z + vL.z });
-        vec3 vW{ w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
-
-        position = moveAndClamp(space, position, vW, radius);
-
-        // Face toward LOCAL motion (if any), mapped to WORLD yaw via the space
-        if (std::abs(vL.x) + std::abs(vL.z) > 1e-4f) {
-            const float yawLocalDeg = std::atan2(/*x*/vL.x, /*-z*/-vL.z) * 180.f / 3.1415926535f;
-            yawDeg = worldYawFromLocal(space, yawLocalDeg);
-        }
+        pL = space.clampLocal(pL, radius);
+        position = space.toWorld(pL);
+        Character::position = position;
 
         // tick projectile
         ball.bulletActions(dt);
     }
-        template<typename Space>
-    inline void faceSpaceBackward(Enemy& e, const Space& space) {
-        e.yawDeg = worldYawFromLocal(space, 180.0f);
-    }
-
 };
-
-
-
 #endif // _ENEMY_H
 
