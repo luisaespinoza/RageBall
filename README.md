@@ -56,7 +56,33 @@
 ---
 
 ### **Josh –**
-*(Awaiting contribution details)*
+- **Level01**
+  - Consists of three mini stages. 
+  - The first stage has static targets the player must shoot down. 
+  - The second stage has moving targets the player must shoot down.
+  - The third stage has moving "throwers", these are enemies that throw balls forward at random intervals (not aimed towards the player)
+- **Code**
+  -  OBJ Loader
+    - A complete OBJ file loader allowing OBJs to be converted into vertex/vertex normal/vertex texture buffers for graphical rendering
+    - Supports quads/triangles + textures + normals (for lighting)
+  - OBJ Animations
+    - Class that supports OBJ file animations including frames, FPS, animation start/stop/reset, etc
+  - Bounding Boxes
+    - Class that allows for a given model to hold multiple bounding boxes
+    - Allow for simple boolean collisions (mainly used for ball hit detection) or face detection (6 faces total for box)
+    - Used for collision physics and ball bouncing physics
+  - Sound Helper
+    - Modifed existing sound class to support IrrKlang 3D spacial audio
+    - Added volume+pitch adjustments to sound class
+- **Other**
+  - Blender
+    - Made player animations + model -- exported as OBJ files
+    - Made UFO model
+  - CAD
+    - Made map design in CAD -- exported as OBJ files
+  - Sounds
+    - Sound effects including: playerHit, playerDeath, targetHit, throwerHit, throwerDeath all self recorded and edited.
+    - Existing sound effects modified: levelTransition, level music (clipped, fadeIn) effects added. 
 
 ### **Lily –**
 - **UIs, Level02, Artwork**
