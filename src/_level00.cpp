@@ -22,6 +22,7 @@ _level00::_level00() {
     ballThrowTimer = new _timerPlusPlus();
     soundEngine = new _sounds();
     playerDeathTimer = new _timerPlusPlus();
+    skySphere = new _skySphere();
 }
 
 _level00::~_level00() {
@@ -30,6 +31,8 @@ _level00::~_level00() {
 
 void _level00::loadAssets() {
     currentStage = LEVEL00_INIT;
+    skySphere->initSkySphere("images/skysphere.png");
+    skySphere->scale = {5.0f, 5.0f, 5.0f};
     // PLAYER INIT //
     player->vec_scale = {0.15f, 0.15f, 0.15f};
     player->initPlayer();
@@ -130,6 +133,7 @@ void _level00::unloadAssets()
     delete ballThrowTimer; ballThrowTimer = nullptr;
     delete soundEngine; soundEngine = nullptr;
     delete playerDeathTimer; playerDeathTimer = nullptr;
+    delete skySphere; skySphere = nullptr;
 }
 
 void _level00::handleKey(UINT uMsg, WPARAM wParam) {
@@ -226,7 +230,7 @@ void _level00::reset() {
     soundEngine->stopAllSounds();
     currentStage = LEVEL00_INIT;
     player->position = {0.0f, 10.0f, 25.0f};
-    playerHealth = 3;
+    playerHealth = 1;
     playerLastHitid = -1;
     // delete existing balls/targets/throwers
     for (int i = 0; i < balls.size(); i++) {
@@ -615,10 +619,11 @@ void _level00::update(double dt) {
 }
 
 void _level00::render(const RenderFlags& flags) {
-    if (currentStage == LEVEL00_INIT) {
+    if (currentStage == LEVEL00_INIT || playerHealth <= 0) {
         // Loading stage - skip input handling
         return;
     }
+    skySphere->drawSkySphere();
     if (noclipEnabled) {
         noclipCamera->setUpCamera(); // camera MUST be first!
     }

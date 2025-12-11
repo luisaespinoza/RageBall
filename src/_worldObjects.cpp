@@ -100,7 +100,7 @@ void _balls::updateModel(double dt) {
 void _balls::drawModel()
 {
     if (ballType == BALL_FRIENDLY) {
-        color = {0.0f, 1.0f, 0.0f}; // green for friendly
+        //color = {1.0f, 0.0f, 0.0f}; // red for friendly
     } else if (ballType == BALL_ENEMY) {
         color = {1.0f, 0.0f, 0.0f}; // red for enemy
     }
