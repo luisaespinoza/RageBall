@@ -44,6 +44,7 @@ void _level00::loadAssets() {
     right_wall->initModel("images/arena/plaster.jpg","models/arena/right_wall.obj", _model::CUSTOM);
     // bounding boxes
     main_court->addBoundingBox({47.0f,1.0f,88.0f});
+    main_court->addBoundingBox({58.0f, 12.0f, 1.0f}, {0.0f, 6.0f, -35.0f}, main_court->scale);   // back wall
     outer_court->addBoundingBox({25.0f,12.0f,1.0f}, {0.0f, 6.0f, 0.0f}, outer_court->scale);     // mid-court divider
     outer_court->addBoundingBox({25.0f,12.0f,1.0f}, {0.0f, 6.0f, -25.0f}, outer_court->scale);   // back wall
     outer_court->addBoundingBox({25.0f,12.0f,1.0f}, {0.0f, 6.0f, 25.0f}, outer_court->scale);    // front wall
@@ -493,7 +494,7 @@ void _level00::update(double dt) {
     soundEngine->updateListener({player->position.x, player->position.y + 0.5f, player->position.z}, {characterCamera->des.x, characterCamera->des.y, characterCamera->des.z}, {0.0f, 1.0f, 0.0f});
     // PHYSICS UPDATE - BALLS //
     for (int i = 0; i < balls.size(); i++) {
-        vector<_boundingBox::collisionType> ballCollisions = balls[i]->checkCollisionWith(main_court->boundingBoxes[0]);
+        vector<_boundingBox::collisionType> ballCollisions = main_court->checkCollisionWith(balls[i]->boundingBoxes[0]);
         bool movementImpulse = false; // if true prevents collision to allow for movement to adjust
         if (std::count(ballCollisions.begin(), ballCollisions.end(), _boundingBox::POS_Y) == 0) {
             // ball in air
