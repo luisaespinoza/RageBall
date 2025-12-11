@@ -5,6 +5,7 @@
 #include<_textureloader.h>
 #include<_objloader.h>
 #include<_boundingBox.h>
+#include<_timerPlusPlus.h>
 
 class _model
 {

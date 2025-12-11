@@ -495,6 +495,7 @@ std::cout << "CWD: " << cwd << std::endl;
 	
 
 	// Shutdown
+	_sounds::dropSoundEngine(); // destructor for static sound engine
 	KillGLWindow();					    // Kill The Window
     if (gCrosshair) { DestroyCursor(gCrosshair); gCrosshair = nullptr; }
 	return (msg.wParam);				// Exit The Program
