@@ -34,30 +34,18 @@
 
 #### Level Logic & Progression
 - **Level01 Gameplay Loop**  
-
-  -_level01.h/.cpp → Major subsystem integrating all of Luis’s core systems.
-
--Key responsibilities:
-
-  -Arena mode logic (primary gameplay path).
-
-  -Survival timer handling & level transition signaling.
-
-  -Enemy spawning with formation presets & per-enemy randomized skins.
-
-  -Player movement in arena-local space with clamping.
-
-  -Obstacle collisions and damage.
-
-  -Camera follow inside either arena or hallway systems.
-
-  -Charge-shot aiming using cursor-to-local steering and world conversion.
-
-  -Enemy projectile → player damage, including cooldown.
-
-  -Player projectile → enemy kill logic.
-
-  -Health pickup spawning, ring effect timing, and visual scaling.
+  - `_level01.h/.cpp` → Major subsystem integrating all of Luis’s core systems.
+  - Key responsibilities:
+    - Arena mode logic (primary gameplay path).
+    - Survival timer handling & level transition signaling.
+    - Enemy spawning with formation presets & per-enemy randomized skins.
+    - Player movement in arena-local space with clamping.
+    - Obstacle collisions and damage.
+    - Camera follow inside either arena or hallway systems.
+    - Charge-shot aiming using cursor-to-local steering and world conversion.
+    - Enemy projectile → player damage, including cooldown.
+    - Player projectile → enemy kill logic.
+    - Health pickup spawning, ring effect timing, and visual scaling.
 #### Game Flow / Scene Infrastructure
 - **Scene Manager**  
   - `_sceneManager.h` → Scene stack, pause overlays, scene transitions, level loading, global light, input forwarding.
