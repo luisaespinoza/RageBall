@@ -24,8 +24,7 @@ _targets::_targets(const _targets& other) : _model(other) // calls the copy cons
 _targets::~_targets()
 {
     //dtor
-    delete hitTimer;
-    hitTimer = nullptr;
+    delete hitTimer; hitTimer = nullptr;
 }
 
 void _targets::targetHit()
@@ -68,6 +67,8 @@ void _targets::drawModel()
 _balls::_balls()
 {
     //ctor
+    soundCooldownTimer = new _timerPlusPlus();
+    soundCooldownTimer->reset();
 }
 
 _balls::_balls(const _balls& other) : _model(other) // calls the copy constructor of _model 
@@ -75,11 +76,14 @@ _balls::_balls(const _balls& other) : _model(other) // calls the copy constructo
     // copy states
     ballType = other.ballType;
     lifeLength = other.lifeLength;
+    soundCooldownTimer = new _timerPlusPlus();
+    soundCooldownTimer->reset();
 }   
 
 _balls::~_balls()
 {
     //dtor
+    delete soundCooldownTimer; soundCooldownTimer = nullptr;
 }
 
 void _balls::updateModel(double dt) {
@@ -96,7 +100,7 @@ void _balls::updateModel(double dt) {
 void _balls::drawModel()
 {
     if (ballType == BALL_FRIENDLY) {
-        color = {0.0f, 1.0f, 0.0f}; // green for friendly
+        //color = {1.0f, 0.0f, 0.0f}; // red for friendly
     } else if (ballType == BALL_ENEMY) {
         color = {1.0f, 0.0f, 0.0f}; // red for enemy
     }

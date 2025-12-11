@@ -46,10 +46,10 @@ struct Player : public Character {
     // for throwing animation
     _animation* throw_prep_arm_animation = nullptr;
     _animation* throw_prep_ball_animation = nullptr;
-    _timerPlusPlus* animationTimer = nullptr;
     bool hasBall = true;
     void initPlayer()
-    {
+    { 
+        
         // Initialize player properties
         //hasBall = false;
         currentAnimation = IDLE;
@@ -57,8 +57,6 @@ struct Player : public Character {
         //collisionBoxOffset = {0.0f, 0.8f, 0.0f};
         //rotation = {0.0f, 0.0f, 0.0f};
         //size = {1.0f, 1.0f, 1.0f};
-        // timers
-        animationTimer->reset();
         // main model
         playerModel->initModel("", "models/player.obj", _model::CUSTOM);
         playerModel->enabled = true;
@@ -85,7 +83,6 @@ struct Player : public Character {
         //collisionBox->position = (position + collisionBoxOffset);
         switch (currentAnimation) {
             case WALK:
-                animationTimer->reset();
                 walk_body_animation->drawAnimation({position.x, position.y, position.z}, rotation);
                 if (currentThrowAnimation == THROW_PREP) {
                     throw_prep_arm_animation->drawAnimation({position.x, position.y, position.z}, rotation);
@@ -229,7 +226,6 @@ void applyScale(float s) {
         walk_ball_animation = new _animation();
         throw_prep_arm_animation = new _animation();
         throw_prep_ball_animation = new _animation();
-        animationTimer = new _timerPlusPlus();
         playerNoArmModel = new _model();
 
     }
@@ -245,7 +241,6 @@ void applyScale(float s) {
         delete walk_body_animation;
         delete walk_arm_animation;
         delete walk_ball_animation;
-        delete animationTimer;
         delete throw_prep_arm_animation;
         delete throw_prep_ball_animation;
         delete playerNoArmModel;

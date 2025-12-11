@@ -47,6 +47,8 @@ class _balls : public _model {
         virtual void drawModel() override;
         // Handles ball update logic (movement, physics, etc) Doesn't handle rendering/drawing
         void updateModel(double dt);
+        // Used sound cooldown -- prevents multiple rapid sounds on collisions
+        _timerPlusPlus* soundCooldownTimer = nullptr;
 
     protected:
     private:

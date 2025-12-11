@@ -14,6 +14,8 @@
 #include<_boundingBox.h>
 #include<windowsx.h>    
 #include<_worldObjects.h>
+#include<_sounds.h>
+#include<_skysphere.h>
 
 /* Stages for Level00 -- INIT is the loading stage (models/textures/etc) -- needs a loading screen!
 * LEVEL00_INIT = Loading sector. Physics is disabled, controls disabled, etc.
@@ -74,6 +76,8 @@ public:
     // direction: 1 = right, -1 = left, 0 = static
     void createThrower(vec3f position, float speed, int direction = 0); 
 private:
+    // SKYSPHERE //
+    _skySphere* skySphere = nullptr;
     // CAMERAS //
     _camera* characterCamera = nullptr;
     _camera* noclipCamera = nullptr;
@@ -101,6 +105,7 @@ private:
     _timerPlusPlus* directorTimer = nullptr;
     _timerPlusPlus* ballThrowTimer = nullptr;
     _timerPlusPlus* debugTimer = nullptr;
+    _timerPlusPlus* playerDeathTimer = nullptr;
     // BALLS!!//
     _balls* ballPrototype = nullptr;
     vector<_balls*> balls;
@@ -134,8 +139,21 @@ private:
     bool firstMouse = true;
     float ballPower = 0.0f;
 
-    int playerHealth = 5; // Player health -- could be inside Player class, but trivial
+    int playerHealth = 1; // Player health -- could be inside Player class, but trivial
     int playerLastHitid = -1; // to prevent multiple hits from same ball (player only)
+    // SOUNDS //
+    int targetsHit = 0; // changes sound pitch for cool effect
+    _sounds* soundEngine = nullptr;
+    // sound - settings wa
+    float walkVolume = 0.25f;
+    float ballBounceVolume = 0.3f;
+    float targetHitVolume = 1.0f;
+    float playerHitVolume = 1.0f;
+    float playerDeathVolume = 1.0f;
+    float throwerHitVolume = 1.0f;
+    float throwerDieVolume = 1.0f;
+    float musicVolume = 0.15f;
+    float transitionLevelVolume = 0.5f;
 };
 
 #endif // _LEVEL00_H
