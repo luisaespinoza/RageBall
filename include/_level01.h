@@ -52,7 +52,17 @@ private:
     _camera*       levelCamera  = nullptr;
     std::vector<_hallway> halls;
     _arenaRoom arena_;
-    bool useArena =true;
+    bool useArena =true;// Mouse aiming data (copy of level00 style)
+    int lastMouseX = 0;
+    int lastMouseY = 0;
+    int windowWidth = 1;
+    int windowHeight = 1;
+    bool firstMouse = true;
+    // Survival timer
+    float survivalTime = 60.0f;       // 60 seconds
+    bool survivalActive = false;
+
+
     struct ThrowerAI { float cooldown = 1.6f; float t = 0.f; };
     std::vector<ThrowerAI> enemyAI_;
     std::vector<std::pair<Pose,float>> hazardsLocal_; // local-space hazards
@@ -69,6 +79,11 @@ private:
     _sprite* healthRingEffect = nullptr;
     _timer healthRingEffectTimer;
     void spawnArenaEnemies_();
+
+    float chargePower = 0.0f;
+    bool isCharging = false;
+    float chargeMax = 2.0f;
+    _timerPlusPlus* ballThrowTimer_ = nullptr;
 };
 
 #endif // _LEVEL01_H

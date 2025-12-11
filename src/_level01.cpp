@@ -1,6 +1,39 @@
 #include "_level01.h"
-static GLuint gActiveObstacleTex = 0;
+#include <windows.h>
+#include <windowsx.h>
+
+namespace {
+    // Global ball radius for Level01 (draw + collision)
+    constexpr float kArenaBallRadius = 5.0f; // was 0.03f by default; tweak to taste
+
     struct Slot { float x, z; };
+
+    // Character skins for arena enemies (JPGs you generated)
+    static const char* kEnemySkinFiles[] = {
+        "models/megaman/Bass.jpg",
+        "models/megaman/ChromeCamo.jpg",
+        "models/megaman/CTF_B.jpg",
+        "models/megaman/CTF_R.jpg",
+        "models/megaman/DrillMan.jpg",
+        "models/megaman/FreezeMan.jpg",
+        "models/megaman/HeatMan.jpg",
+        "models/megaman/MegaMan.jpg",
+        "models/megaman/MetalMan.jpg",
+        "models/megaman/Metool.jpg",
+        "models/megaman/ProtoMan.jpg",
+        "models/megaman/RedAnt.jpg",
+        "models/megaman/SnakeMan.jpg",
+        "models/megaman/Wily.jpg",
+        "models/megaman/Zero.jpg",
+    };
+
+    constexpr int kEnemySkinCount =
+        sizeof(kEnemySkinFiles) / sizeof(kEnemySkinFiles[0]);
+}
+
+
+static GLuint gActiveObstacleTex = 0;
+    //struct Slot { float x, z; };
 
 static void DrawTexturedCube()
 {
@@ -392,11 +425,16 @@ void _level01::loadAssets() {
     healthRingEffectTimer = _timer();
     healthRingEffectTimer.enabled = false;
     if (!player) player = new Player();
-    player->init("models/megaman/tris.md2", "models/megaman/MegaMan.pcx", textures);
+    player->init("models/megaman/tris.md2", "models/megaman/MegaMan.jpg", textures);
     player->applyScale(0.005f);
     player->position = {0.0f, 0.0f, -2.0f};
     player->radius   = 0.05f;
     currentHallIndex = 0;
+    isCharging  = false;
+    chargePower = 0.0f;
+survivalTime = 60.0f;
+survivalActive = true;
+player->playerResetLife(1);
 
     mdTimer->reset();
     bool loaded = false;
@@ -478,7 +516,11 @@ void _level01::unloadAssets()
 
 void _level01::reset()
 {
-    player->playerResetLife(5);
+    player->playerResetLife(1);
+    isCharging  = false;
+       chargePower = 0.0f;
+    survivalTime = 60.0f;
+    survivalActive = true;
 
     if (useArena) {
         // --- Player spawn on +Z half, facing -Z ---
@@ -545,12 +587,19 @@ void _level01::reset()
         e->ball.live = false;
         e->state = Enemy::State::Windup; e->stateT = 0.0f;
     }
+    if (player->ball) {
+        player->ball->radius = kArenaBallRadius;
+    }
 }
 
 void _level01::update(double dt)
 {
 
+    const float dtSec = static_cast<float>(dt)/2.0f; // 5.0f;
+    float animSpeedScale = 0.3f; // start here
+    float dtAnim = static_cast<float>(dt) * animSpeedScale;
     if (!player) return;
+    bool shootPressed = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
 
     // --- INPUT ---
     const bool w = (GetAsyncKeyState(KEY_W) & 0x8000) != 0;
@@ -562,14 +611,52 @@ void _level01::update(double dt)
     float str = (d ? 1.f : 0.f) - (a ? 1.f : 0.f);   // strafe  = local +X
     float mag = sqrtf(fwd*fwd + str*str);
     if (mag > 1e-6f) { fwd /= mag; str /= mag; }
+    float mouseXNorm = 0.0f;
+//{
+//    RECT clientRect;
+//    GetClientRect(hwnd, &clientRect);
+//    int windowWidth  = clientRect.right  - clientRect.left;
+//    // int windowHeight = clientRect.bottom - clientRect.top; // not needed right now
+//
+//    POINT pt;
+//    GetCursorPos(&pt);
+//    ScreenToClient(hwnd, &pt);  // convert screen -> client coords
+//
+//    if (windowWidth > 0) {
+//        mouseXNorm = (2.0f * static_cast<float>(pt.x)) /
+//                     static_cast<float>(windowWidth) - 1.0f;
+//    }
+//
+//    // Optional: clamp crazy side angles
+//    const float maxAbsX = 0.8f;
+//    if (mouseXNorm >  maxAbsX) mouseXNorm =  maxAbsX;
+//    if (mouseXNorm < -maxAbsX) mouseXNorm = -maxAbsX;
+//}
+// --- Survival Timer ---
+// --- Survival Timer ---
+if (survivalActive) {
+    survivalTime -= static_cast<float>(dt);
+    if (survivalTime <= 0.0f) {
+        survivalTime   = 0.0f;
+        survivalActive = false;
+
+        std::cout << "[timer] Time's up!\n";
+
+        // Treat survival completion as level completion:
+        if (!firedNext_ && requestNextLevel_ && !nextLevelId_.empty()) {
+            firedNext_ = true;
+            requestNextLevel_(nextLevelId_);
+            return; // stop updating this frame; scene manager will swap soon
+        }
+    }
+}
+
 
     if (useArena) {
         // --- LOCAL velocity ---
-         const float step = player->speed * (float)dt;
-        float dtf = static_cast<float>(dt);
+        const float step = player->speed * dtSec;
         for (auto& e : enemies) {
-            e->stateT += dtf;
-
+            e->stateT += dtAnim;
         }
 
         vec3 vL { str * step, 0.0f, -fwd * step };
@@ -581,7 +668,7 @@ void _level01::update(double dt)
         vec3 vW { w1.x - w0.x, w1.y - w0.y, w1.z - w0.z };
 
         // move & clamp inside arena
-        player->moveAndClamp(dtf, vW, arena_);  // same template you used with halls
+        player->moveAndClamp(dtSec, vW, arena_);  // same template you used with halls
 
         // ------------- Obstacle collisions (same sphere test) -------------
         auto sqr = [](float v){ return v*v; };
@@ -598,7 +685,7 @@ void _level01::update(double dt)
             if (!e->makeTrajectory) e->makeTrajectory = [] { return Trajectory_Parabola(3.0f); };
 
             // Brain/body update in Arena space (movement+clamp happens inside)
-            e->updateAI(dtf, arena_);
+            e->updateAI(dtAnim, arena_);
             if (!player) continue;
 
             // Work in arena-local space so the math matches your conventions:
@@ -614,7 +701,7 @@ void _level01::update(double dt)
             }
         }
         if (player->hurtCooldown > 0.0f)
-            player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dtf));
+            player->hurtCooldown = std::max(0.0f, player->hurtCooldown - static_cast<float>(dtSec));
 
         if (player->hurtCooldown <= 0.f) {
             bool tookHit = false;
@@ -625,12 +712,26 @@ void _level01::update(double dt)
                 }
             });
 
-            if (tookHit) {
-                player->life -= 1;
-                player->hurtCooldown = 1.0f;
-                std::cout << "[player] hit! life=" << player->life << "\n";
-                if (player->life <= 0) { this->reset(); return; }
-            }
+if (tookHit) {
+    player->life -= 1;
+    player->hurtCooldown = 1.0f;
+    std::cout << "[player] hit! life=" << player->life << "\n";
+
+    if (player->life <= 0) {
+        // GAME OVER: always go back to main menu, independent of nextLevelId_
+        if (!firedNext_ && requestNextLevel_) {
+            firedNext_ = true;
+            requestNextLevel_("menu");  // SceneManager will nuke stack + boot menu
+        } else {
+            // Fallback: keep old behavior if callback isn't wired
+            this->reset();
+        }
+        return;
+    }
+}
+
+
+
         }
 
 // ===================== ENEMY MOVEMENT (local space, lock to enemy half) =====================
@@ -715,23 +816,154 @@ void _level01::update(double dt)
 //     // Drive animation from world-space velocity
 //     e->setAnimForVelocity(vW);
 // }
+// --- PLAYER CHARGE SHOT (Level00-style) ---
+// Hold LMB to charge, release to throw straight forward.
+// --- PLAYER CHARGE SHOT ---
+// --- PLAYER CHARGE SHOT ---
+if (shootPressed)
+{
+    if (!isCharging) {
+        // start charging
+        isCharging = true;
+        chargePower = 0.0f;
+    }
 
+    // accumulate charge in seconds (dt from main is already seconds)
+    chargePower += static_cast<float>(dt);
+    if (chargePower > chargeMax) {
+        chargePower = chargeMax;
+    }
+}
+else
+{
+    // mouse released: if we were charging, actually throw
+    if (isCharging && chargePower > 0.0f)
+    {
+        // --- sample mouse at the *moment of release* ---
+        POINT pt;
+        float mouseXNorm = 0.0f;
+        float mouseYNorm = 0.0f;
 
+        if (GetCursorPos(&pt))
+        {
+            // Use the foreground window as the client we’re interested in.
+            HWND win = GetForegroundWindow();
+            if (win)
+            {
+                ScreenToClient(win, &pt);
 
-// --- Player bullet → Enemy collision (optional knockout/stun) ---
-        if (player->ball->live) {
-            for (auto& e : enemies) {
-                if (collisionChecker->isSphereCol(
-                        player->ball->pos, e->position,
-                        player->ball->radius, e->radius, 0.0f)) {
-                    // Simple stun/respawn: knock one life, reset enemy, or mark stunned
-                    e->state = Enemy::State::Stunned;
-                    e->stateT = 0.0f;
-                    player->ball->live = false;
-                    break;
+                RECT rc;
+                GetClientRect(win, &rc);
+                int winW = rc.right  - rc.left;
+                int winH = rc.bottom - rc.top;
+
+                if (winW > 0) {
+                    // [-1, 1]: left to right
+                    mouseXNorm = (2.0f * static_cast<float>(pt.x)) /
+                                 static_cast<float>(winW) - 1.0f;
                 }
+                if (winH > 0) {
+                    // [ 1, -1]: top to bottom (like level00’s mouseYNorm)
+                    mouseYNorm = 1.0f - (2.0f * static_cast<float>(pt.y)) /
+                                           static_cast<float>(winH);
+                }
+
+                // optional: clamp crazy side angles
+                const float maxAbsX = 0.9f;
+                if (mouseXNorm >  maxAbsX) mouseXNorm =  maxAbsX;
+                if (mouseXNorm < -maxAbsX) mouseXNorm = -maxAbsX;
             }
         }
+
+        float power01 = chargePower / chargeMax; // [0..1]
+
+        const float minSpeed = 3.0f;   // was 10
+        const float maxSpeed = 12.0f;  // was 25
+
+        float throwSpeed = minSpeed + (maxSpeed - minSpeed) * power01;
+
+        // --- build local-space direction: like level00 but always forward ---
+        // +X = right from mouse, -Z = forward, Y = small arc
+        vec3 dirL{
+            mouseXNorm,   // steer left/right from click
+            0.25f,        // small upward arc (ignore mouseY for now)
+            -1.0f         // ALWAYS forward
+        };
+
+        // normalize local direction
+        float lenL = std::sqrt(dirL.x*dirL.x + dirL.y*dirL.y + dirL.z*dirL.z);
+        if (lenL > 1e-6f) {
+            dirL.x /= lenL;
+            dirL.y /= lenL;
+            dirL.z /= lenL;
+        }
+
+        // --- convert that to world using the arena’s orientation ---
+        vec3 dirW = arena_.toWorldDir(dirL);
+        float lenW = std::sqrt(dirW.x*dirW.x + dirW.y*dirW.y + dirW.z*dirW.z);
+        if (lenW > 1e-6f) {
+            dirW.x /= lenW;
+            dirW.y /= lenW;
+            dirW.z /= lenW;
+        }
+
+        // --- create a target point far along that direction ---
+        const float aimDistance = 30.0f;
+        vec3 target{
+            player->position.x + dirW.x * aimDistance,
+            player->position.y + dirW.y * aimDistance,
+            player->position.z + dirW.z * aimDistance
+        };
+
+        // --- fire ---
+        player->throwAt(target, throwSpeed, 3.0f);  // small spread
+    }
+
+    // reset charge state
+    isCharging  = false;
+    chargePower = 0.0f;
+}
+
+
+
+
+
+// --- Player ball → Enemy collision (remove enemy from play & consume ball) ---
+if (player->ball && player->ball->live) {
+    const vec3& bp = player->ball->pos;
+
+    for (auto& e : enemies) {
+        if (!e) continue;  // enemy already removed or not yet spawned
+
+        const vec3& ep = e->position;
+
+        // generous collision sphere: enemy radius + a bit of padding
+        const float enemyRadius = e->radius + 0.2f;
+
+        if (hitSphere(bp.x, bp.y, bp.z,
+                      player->ball->radius,
+                      ep.x, ep.y, ep.z,
+                      enemyRadius))
+        {
+            std::cout << "[arena] player ball hit enemy\n";
+
+            // 1) consume the player ball
+            player->ball->live = false;
+
+            // 2) ensure this enemy stops doing anything (including throwing)
+            e->ball.live = false;
+
+
+// 3) remove enemy from play: mark as dead / non-collidable
+e->ball.live = false;
+e->radius    = 0.0f;          // render() already skips radius <= 0
+// optionally: e->state = Enemy::State::Idle;  // if you have a "dead" / idle state
+
+
+            break;  // only one enemy hit per frame
+        }
+    }
+}
         // --- Enemy bullets → Player collision ---
         if (player->hurtCooldown <= 0.f) {      // only if not currently invincible
             for (auto& e : enemies) {
@@ -781,7 +1013,7 @@ void _level01::update(double dt)
 
 
         player->setAnimForVelocity(vW);
-        player->updateBall(dtf);
+        player->updateBall(dtSec);
         return;
     }
 
@@ -925,7 +1157,12 @@ void _level01::update(double dt)
 //player->yawDeg += delta;
 
 // (Optional) animation from motion
-    player->setAnimForVelocity(vW);
+    //vec3 vAnim{
+    //    vW.x * animVelocityScale,
+    //    vW.y * animVelocityScale,
+    //    vW.z * animVelocityScale
+    //};
+    //player->setAnimForVelocity(vAnim);
     player->updateBall(dt);
 
 }
@@ -951,39 +1188,99 @@ void _level01::render(const RenderFlags& flags)
         glPushMatrix();
         arena_.render();
         glPopMatrix();
-        for (auto& e : enemies) {
 
-                    e->render();           // draws enemy model + its projectile
-
-        }
+for (auto& e : enemies) {
+    if (!e) continue;
+    if (e->radius <= 0.0f) continue;  // skip enemies taken out of play
+    e->render();                      // draws enemy + its projectile
+}
         player->render();
-        player->ball->drawBullet();
+        if (player->ball && player->ball->live) {
+            player->ball->drawBullet();
+        }
         //pickupItem->pos = player->position; // for testing
         pickupItem->drawSprite();
-        if (healthRingEffectTimer.getTicks() < 2000 && healthRingEffectTimer.enabled) { // Effect lasts for two seconds, long but good for testing
-            healthRingEffect->pSize.x += 0.002f; // Animation scale effect
-            healthRingEffect->pSize.y += 0.002f;
-            healthRingEffect->pSize.z += 0.002f;
-            healthRingEffect->drawSprite();
-        }
-        glDisable(GL_LIGHTING);
-        return;
+
+    if (healthRingEffectTimer.getTicks() < 2000 && healthRingEffectTimer.enabled) {
+        healthRingEffect->pSize.x += 0.002f;
+        healthRingEffect->pSize.y += 0.002f;
+        healthRingEffect->pSize.z += 0.002f;
+        healthRingEffect->drawSprite();
     }
+    glDisable(GL_LIGHTING);
+    // no return here – we’ll fall through to HUD overlays
+} else {
+    // existing hallway rendering path
     glEnable(GL_LIGHTING);
     for (auto& h : halls) {
         glPushMatrix();
         gActiveObstacleTex = h.texWall_;
-        h.render();                     // now self-contained for texture state
+        h.render();
         glPopMatrix();
     }
     gActiveObstacleTex = 0;
 
-    for (int i = 0; i+1 < (int)halls.size(); ++i) {
-        renderHallSeam(halls[i], halls[i+1]);
-    }
+
     player->render();
     player->ball->drawBullet();
     glDisable(GL_LIGHTING);
+}
+
+    glEnable(GL_LIGHTING);
+
+    gActiveObstacleTex = 0;
+
+    player->render();
+    player->ball->drawBullet();
+    glDisable(GL_LIGHTING);
+// --- Draw Survival Timer ---
+// --- Draw Survival Timer ---
+if (survivalActive) {
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+
+    int vp[4];
+    glGetIntegerv(GL_VIEWPORT, vp);
+    gluOrtho2D(0, vp[2], 0, vp[3]);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_LIGHTING);
+
+    char buf[64];
+
+    // SURVIVAL TIME (yellow)
+    glColor3f(1.0f, 1.0f, 0.0f);
+    std::snprintf(buf, sizeof(buf), "SURVIVAL TIME: %.1f", survivalTime);
+    glRasterPos2i(20, vp[3] - 40);
+    for (const char* c = buf; *c; ++c) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+    }
+
+    // LIFE (green)
+    // LIFE (green, integer hearts)
+    glColor3f(0.0f, 1.0f, 0.0f);
+    std::snprintf(buf, sizeof(buf), "LIFE: %d", (int)player->life);
+    glRasterPos2i(20, vp[3] - 60);
+    for (const char* c = buf; *c; ++c) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+    }
+
+    // Restore matrices
+    glPopMatrix();                     // modelview
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    // Restore lighting + color and other touched bits
+    glPopAttrib();
+}
+
 
 }
 
@@ -1076,6 +1373,9 @@ void _level01::applyCamera()
                      player->position.y + 1.0f,
                      player->position.z + fwd.z };
         glMatrixMode(GL_MODELVIEW);
+        vec3 eyeL = arena_.toLocal(eye);
+        eyeL      = arena_.clampLocal(eyeL, 0.1f);   // small radius buffer
+        eye       = arena_.toWorld(eyeL);
         gluLookAt(eye.x, eye.y, eye.z, at.x, at.y, at.z, 0,1,0);
         return;
         }
@@ -1110,134 +1410,160 @@ void _level01::applyCamera()
     gluLookAt(eye.x, eye.y, eye.z, at.x, at.y, at.z, 0, 1, 0);
     }
 }
-// _level01.cpp
+
 #include <cmath>
 
 void _level01::throwBallFromRay(const vec3& rayOrigin, const vec3& rayDir) {
-    if (!player) return;
+//noop
+//stubbed for better implementation elsewhere
+(void) rayOrigin; (void) rayDir;
+    //if (!player) return;
 
-    // Normalize the incoming ray direction
-    vec3 dir = rayDir;
-    float L = sqrtf(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z);
-    if (L > 1e-6f) { dir.x/=L; dir.y/=L; dir.z/=L; }
+    // // Normalize the incoming ray direction
+    //vec3 dir = rayDir;
+    //float L = sqrtf(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z);
+    //if (L > 1e-6f) { dir.x/=L; dir.y/=L; dir.z/=L; }
 
-    const float yPlane = player->position.y + 1.0f;  // hand-ish height
-    vec3 targetW{};
-    bool have = false;
+    //const float yPlane = player->position.y + 1.0f;  // hand-ish height
+    //vec3 targetW{};
+    //bool have = false;
 
-    // 1) Preferred: intersect the click ray with the horizontal plane at yPlane
-    const float denom = dir.y;
-    if (fabsf(denom) > 1e-5f) {
-        const float t = (yPlane - rayOrigin.y) / denom;
-        if (t > 0.1f) { // only accept intersections IN FRONT of the camera by a bit
-            targetW = { rayOrigin.x + t*dir.x, yPlane, rayOrigin.z + t*dir.z };
-            have = true;
-        }
-    }
+   // // 1) Preferred: intersect the click ray with the horizontal plane at yPlane
+    //const float denom = dir.y;
+    //if (fabsf(denom) > 1e-5f) {
+      //  const float t = (yPlane - rayOrigin.y) / denom;
+       // if (t > 0.1f) { // only accept intersections IN FRONT of the camera by a bit
+         //   targetW = { rayOrigin.x + t*dir.x, yPlane, rayOrigin.z + t*dir.z };
+          //  have = true;
+       // }
+   // }
 
-    // 2) Fallback: take a point some distance along the ray, then drop to the plane
-    if (!have) {
-        const float s = 20.0f; // “throw at something 20 units out” in the clicked direction
-        vec3 p = { rayOrigin.x + s*dir.x,
-                   rayOrigin.y + s*dir.y,
-                   rayOrigin.z + s*dir.z };
-        targetW = { p.x, yPlane, p.z };
-    }
+   // // 2) Fallback: take a point some distance along the ray, then drop to the plane
+    //if (!have) {
+      //  const float s = 20.0f; // “throw at something 20 units out” in the clicked direction
+       // vec3 p = { rayOrigin.x + s*dir.x,
+         //          rayOrigin.y + s*dir.y,
+           //        rayOrigin.z + s*dir.z };
+      //  targetW = { p.x, yPlane, p.z };
+   // }
 
-    // Fire the throw with a lobby arc so it feels good at all distances
-    player->throwAt(targetW, /*throwSpeed*/18.0f, /*spreadDeg*/2.0f);
-//    player->ball->setTrajectory(Trajectory_Lob());  // gentle arc
-    // (Or tweak: Trajectory_Parabola(9.8f))
+   // // Fire the throw with a lobby arc so it feels good at all distances
+   // player->throwAt(targetW, /*throwSpeed*/18.0f, /*spreadDeg*/2.0f);
+// //   player->ball->setTrajectory(Trajectory_Lob());  // gentle arc
+   // // (Or tweak: Trajectory_Parabola(9.8f))
 
-    // Place the muzzle in front of the player, using your space's forward
-    vec3 fwd{0,0,0};
-    if (!halls.empty()) {
-        size_t idx = currentHallIndex; if (idx >= halls.size()) idx = 0;
-        fwd = halls[idx].toWorldDir({0,0,-1});
-    } else {
-        // if you’ve switched to arena_, use it; else fall back to yaw
-        // fwd = arena_.toWorldDir({0,0,-1});
-        float yr = player->yawDeg * (PI/180.f);
-        fwd = { std::sin(yr), 0.f, -std::cos(yr) };
-    }
+   // // Place the muzzle in front of the player, using your space's forward
+   // vec3 fwd{0,0,0};
+   // if (!halls.empty()) {
+    //    size_t idx = currentHallIndex; if (idx >= halls.size()) idx = 0;
+     //   fwd = halls[idx].toWorldDir({0,0,-1});
+  //  } else {
+    //    // if you’ve switched to arena_, use it; else fall back to yaw
+      //  // fwd = arena_.toWorldDir({0,0,-1});
+      //  float yr = player->yawDeg * (PI/180.f);
+       // fwd = { std::sin(yr), 0.f, -std::cos(yr) };
+   // }
 
-    const float r = player->radius;
-    vec3 muzzle{
-        player->position.x + fwd.x * (0.30f * r),
-        player->position.y + 1.20f * r,
-        player->position.z + fwd.z * (0.30f * r)
-    };
-    player->ball->src = muzzle;
-    player->ball->pos = muzzle;
+   // const float r = player->radius;
+   // vec3 muzzle{
+     //   player->position.x + fwd.x * (0.30f * r),
+     //   player->position.y + 1.20f * r,
+     //   player->position.z + fwd.z * (0.30f * r)
+   // };
+   // player->ball->src = muzzle;
+   // player->ball->pos = muzzle;
 
-    player->ball->radius = std::max(0.2f, 0.40f * r);
+//    player->ball->radius = std::max(0.2f, 0.40f * r);
 }
 
 void _level01::throwBallAtWorld(double wx, double wy, double wz) {
-    if (!player) return;
+//noop
+//stubbed for better implementation elsewhere
+(void)wx; (void)wy; (void)wz;
+    //if (!player) return;
 
     // world target
-    vec3 target{ static_cast<float>(wx),
-                 static_cast<float>(wy),
-                 static_cast<float>(wz) };
+   // vec3 target{ static_cast<float>(wx),
+   //              static_cast<float>(wy),
+   //              static_cast<float>(wz) };
 
     // fire toward that target (fills des, speed, spread, etc.)
-    player->throwAt(target, /*speed*/ 18.0f, /*spreadDeg*/ 5.0f);
+   // player->throwAt(target, /*speed*/ 18.0f, /*spreadDeg*/ 5.0f);
 
-    // --- spawn from a "muzzle" anchored to the scaled player ---
+   // // --- spawn from a "muzzle" anchored to the scaled player ---
     // use current hallway’s forward to push the spawn a bit in front
-    size_t idx = currentHallIndex;
-    if (idx >= halls.size()) idx = 0;
-    const _hallway& H = halls[idx];
-    vec3 fwd = H.toWorldDir({0,0,-1});           // unit forward in world
+   // size_t idx = currentHallIndex;
+   // if (idx >= halls.size()) idx = 0;
+   // const _hallway& H = halls[idx];
+   // vec3 fwd = H.toWorldDir({0,0,-1});           // unit forward in world
 
-    const float r = player->radius;               // already scale-aware (applyScale sets it, :contentReference[oaicite:3]{index=3})
-    vec3 muzzle{
-        player->position.x + fwd.x * (0.30f * r), // slight forward offset
-        player->position.y + 1.20f * r,           // chest-ish height
-        player->position.z + fwd.z * (0.30f * r)
-    };
+   // const float r = player->radius;               // already scale-aware (applyScale sets it, :contentReference[oaicite:3]{index=3})
+   // vec3 muzzle{
+   //     player->position.x + fwd.x * (0.30f * r), // slight forward offset
+   //     player->position.y + 1.20f * r,           // chest-ish height
+   //     player->position.z + fwd.z * (0.30f * r)
+   // };
 
-    // override the source/pos to the muzzle so the shot starts at the chest
-    player->ball->src = muzzle;
-    player->ball->pos = muzzle;
+   // // override the source/pos to the muzzle so the shot starts at the chest
+   // player->ball->src = muzzle;
+   // player->ball->pos = muzzle;
 
-    // scale the visual size of the bullet to the character scale
-    player->ball->radius = std::max(0.02f, 0.40f * r);
+   // // scale the visual size of the bullet to the character scale
+   // player->ball->radius = std::max(0.02f, 0.40f * r);
 }
 void _level01::spawnArenaEnemies_() {
     enemies.clear();
 
-    // Simple 3-enemy formation on the opponent side (z < 0)
-   // struct Slot { float x, z; };
-    const float zEnemy = -0.25f * arena_.d_;            // midpoint of the positive-Z half
-    std::vector<Slot> slots = { {-3.0f, zEnemy}, {0.0f, zEnemy}, {+3.0f, zEnemy} };
+    // 8-enemy formation on the opponent side (z < 0): 2 rows × 4 columns
+    const float zBack  = -0.25f * arena_.d_;  // farther row
+    const float zFront = -0.10f * arena_.d_;  // nearer row
 
-    for (const auto& s : slots) {
+    const Slot slots[8] = {
+        // back row
+        { -4.0f,  zBack }, { -1.5f, zBack }, {  1.5f, zBack }, {  4.0f, zBack },
+        // front row
+        { -4.0f,  zFront }, { -1.5f, zFront }, {  1.5f, zFront }, {  4.0f, zFront },
+    };
+
+    for (int i = 0; i < 8; ++i) {
+        const Slot& s = slots[i];
+
         auto e = std::make_unique<Enemy>();
-        if (!e->init("models/megaman/tris.md2", "", textures)) continue;  // allow untextured
+
+        // pick a random skin from our list
+        int skinIndex = rand() % kEnemySkinCount;
+        const char* skinPath = kEnemySkinFiles[skinIndex];
+
+        // MD2 model with random texture
+        if (!e->init("models/megaman/tris.md2", skinPath, textures))
+            continue;
+
         e->applyScale(0.005f);
 
-        vec3 pL{ s.x, 0.5f, s.z };
+vec3 pL = { s.x, 0.5f, s.z };
+
         pL = arena_.clampLocal(pL, e->radius);
         e->position = arena_.toWorld(pL);
-        e->yawDeg        = worldYawFromLocal(arena_, 180.0f);     // face toward -Z (player)
+        e->yawDeg   = worldYawFromLocal(arena_, 180.0f);   // face toward player
 
-        e->target = player;
+        e->target         = player;
         e->makeTrajectory = [] { return Trajectory_Parabola(3.0f); };
-        e->throwPeriod = 1.6f;
-        e->windupTime  = 0.25f;
+        e->throwPeriod    = 1.6f;
+        e->windupTime     = 0.25f;
 
-        e->preferredMin = 2.5f;   // they only back off if they’re *really* close
-        e->preferredMax = 8.0f;   // they start pushing in when farther than this
-
-        e->strafeSpeed  = 1.2f;
-        e->dangerRadius = 1.2f;
-        // after creating e
+        e->preferredMin   = 2.5f;
+        e->preferredMax   = 15.0f;
+        e->strafeSpeed    = 1.2f;
+        e->dangerRadius   = 1.2f;
+        e->ball.radius    = kArenaBallRadius;
+        e->baseRadiusAtScale1 = 2.50f;   // collider for scale==1 (same)
         float t01 = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        e->stateT = t01 * 0.5f + 10.0f;   // random initial state timer offset (up to 0.5s)
+        e->stateT = t01 * 0.5f + 10.0f;
 
         enemies.emplace_back(std::move(e));
     }
+
     std::cout << "[arena] spawned enemies: " << enemies.size() << "\n";
 }
+
+

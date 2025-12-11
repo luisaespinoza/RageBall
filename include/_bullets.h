@@ -23,9 +23,9 @@ class _bullets
         vec3  baseDir{0,0,0};       // exact aim (src -> des), normalized
         float speed = 1.0f;   // units per tick
         float coneHalfAngleDeg = 0.0f; // 0 = perfect accuracy
-        float maxRange = 200.0f;  // safety cap so missed shots don’t go forever
+        float maxRange = 200.0f;  // safety cap so missed shots donï¿½t go forever
         float traveled = 0.0f;    // how far the shot has flown
-        float radius = 0.03f;
+        float radius = 0.05f;
 
         void setInaccuracyCone(float deg) { coneHalfAngleDeg = deg; }//per agent or level inaccuracy
         uint32_t rngState = 0x9E3779B9u;

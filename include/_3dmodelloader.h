@@ -136,6 +136,8 @@ class _3DModelLoader
 
           vec3 pos;
           float dirAngleZ=180;
+          double animTime = 0.0;       // seconds since this instance started animating
+          float  animPhaseOffset = 0.0f;
     protected:
 
     private:
