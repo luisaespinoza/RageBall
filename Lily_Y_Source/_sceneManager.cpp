@@ -1,12 +1,15 @@
 #include "_sceneManager.h"
-
 #include<windowsx.h>
-
 _sceneManager::_sceneManager()
 {
-    startManager = false;
-
     //ctor
+    // level 00 -> level01
+    LevelRegistry::instance().registerLevel("level00", [](){
+        auto L = std::make_unique<_level00>(); // doesnt need text file for level00
+        L->setNextLevelId("level01");
+        return L;
+    });
+
     // level01 -> level02
     LevelRegistry::instance().registerLevel("level01", [](){
         auto L = std::make_unique<_level01>("levels/level01.txt");
@@ -15,26 +18,39 @@ _sceneManager::_sceneManager()
     });
 
     // level02 -> level03
-    LevelRegistry::instance().registerLevel("level02", [](){
-        auto L = std::make_unique<_level01>("levels/level02.txt");
-        L->setNextLevelId("level03");
-        return L;
-    });
+    // LevelRegistry::instance().registerLevel("level02", [](){
+    //     auto L = std::make_unique<_level01>("levels/level02.txt");
+    //     L->setNextLevelId("level03");
+    //     return L;
+    // });
+    // LevelRegistry::instance().registerLevel("level02", [](){
+    //     return std::make_unique<_level02>();
+    // });
 
-    // level03 -> back to main menu
-    LevelRegistry::instance().registerLevel("level03", [](){
-        auto L = std::make_unique<_level01>("levels/level03.txt");
+     // level02 -> back to main menu
+    LevelRegistry::instance().registerLevel("level02", [](){
+        auto L = std::make_unique<_level02>(); // doesnt need text file for level02
         L->setNextLevelId("");
         return L;
     });
+
+//     // Boot into main menu with a default level id so first Start works
+// this->setCurrentScene(std::make_unique<_menuScene>(
+//     /* onStart */ [this](const std::string& lvl){ this->setCurrentLevel(lvl); },
+//     /* onHelp  */ [this]{
+//         this->pushScene(std::make_unique<HelpScene>(
+//             /* onClose */ [this]{ this->popScene(); }
+//         ));
+//     },
+//     /* onQuit  */ [this]{ PostQuitMessage(0); },
+//     "level01"
+// ));/
 }
 
 _sceneManager::~_sceneManager()
 {
     //dtor
 }
-
-
 void _sceneManager::setCurrentScene(std::unique_ptr<_SceneInterface> newScene)
 {
    // std::cout << "[mgr] setCurrentScene(type=" << typeid(*newScene).name()
@@ -87,10 +103,15 @@ void _sceneManager::updateActiveScene(double dt)
     const SHORT s = GetAsyncKeyState(VK_ESCAPE);
     const bool escPressedEdge = (s & 1) != 0;   // low bit set => key transitioned since last call
 
-    if (escPressedEdge)
-    {
-        if(!sceneStack_.empty())
-        {
+    if (escPressedEdge) {
+        // if (isTopInGameMenu()) {
+        //   //  std::cout << "[mgr] ESC -> resumeFromInGameMenu()\n";
+        //     resumeFromInGameMenu();                 // no onEnter()
+        // } else {
+        //    // std::cout << "[mgr] ESC -> showInGameMenu()\n";
+        //     showInGameMenu();                       // switch to _menuScene (IGM)
+        // }
+        if (!sceneStack_.empty()) {
             if (!isTopInGameMenu())
             {
                 showInGameMenu();                       // switch to _menuScene (IGM)
@@ -108,13 +129,6 @@ void _sceneManager::updateActiveScene(double dt)
         pendingOps_.clear();
         for (auto& f : ops) f();
     }
-}
-
-void _sceneManager::showHelpOverlay()
-{
-    this->pushScene(std::make_unique<_help>(
-        /*onClose*/ [this]{ this->popScene();}
-        ));
 }
 
 void _sceneManager::renderActiveScene()
@@ -184,6 +198,25 @@ void _sceneManager::setCurrentLevel(const std::string& levelId)
     auto loader = [this](const std::string& nextId){
         this->post([this, nextId]{ this->setCurrentLevel(nextId); });
     };
+
+    if(lvl = LevelRegistry::instance().create(levelId))
+    {
+        std::cerr << "[mgr] ERROR: unknown level id '" << levelId << "'\n";
+    }
+    if (auto* l02 = dynamic_cast<_level02*>(lvl.get()))
+    {
+        l02->setRequestNextLevel(loader);
+
+        l02->setRequestGameOver(
+            [this, levelId]
+            {
+                this->post([this, levelId]() {
+                    this->showGameOverlay(levelId);        // uses restartId for Restart button
+                });
+            }
+        );
+    }
+
     setCurrentScene(std::make_unique<LoadLevelScene>(std::move(lvl), loader));
 }
 
@@ -191,7 +224,8 @@ LevelRegistry& LevelRegistry::instance() {
   static LevelRegistry R; return R;
 }
 void LevelRegistry::registerLevel(const std::string& id, LevelFactory f) {
-  factories[id] = std::move(f);
+   std::cout << "[mgr] register level '" << id << "'\n";
+    factories[id] = std::move(f);
 }
 std::unique_ptr<ILevel> LevelRegistry::create(const std::string& id) {
   auto it = factories.find(id);
@@ -207,8 +241,17 @@ LoadLevelScene::LoadLevelScene(std::unique_ptr<ILevel> lvl,
 void LoadLevelScene::onEnter(){
     std::cout << "[load] onEnter: loadAssets begin\n";
 
+    // register level00
+    if (auto* l00 = dynamic_cast<_level00*>(level.get())) {
+        if (loadLevelFn) l00->setRequestNextLevel(loadLevelFn);
+    }
+
     if (auto* l01 = dynamic_cast<_level01*>(level.get())) {
         if (loadLevelFn) l01->setRequestNextLevel(loadLevelFn);
+    }
+
+    if (auto* l02 = dynamic_cast<_level02*>(level.get())) {
+        if (loadLevelFn) l02->setRequestNextLevel(loadLevelFn);
     }
 
     level->loadAssets();
@@ -217,7 +260,8 @@ void LoadLevelScene::onEnter(){
 
 void LoadLevelScene::onExit() {
     if (level) {
-        level->unloadAssets();
+        // Level uses a smart pointer, it auto calls destructors -- calling the unload assets manually can segfault from double-delete
+        //level->unloadAssets();
     }
 }
 
@@ -235,7 +279,7 @@ void LoadLevelScene::render() {
         level->render(flags);
     }
 }
-int LoadLevelScene::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+int LoadLevelScene::winMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN: {
@@ -280,6 +324,9 @@ int LoadLevelScene::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 );
             }
         }
+        case WM_MOUSEMOVE: {
+            if (level) return level->winMsg(hWnd, uMsg, wParam, lParam);
+        }
         default:
             return 0;
     }
@@ -320,26 +367,6 @@ void _sceneManager::applyPerspective(int w, int h)
     gluPerspective(45.0, static_cast<float>(w)/static_cast<float>(h), 0.1, 1000.0);
     glMatrixMode(GL_MODELVIEW);
 }
-
-void _sceneManager::bootMainMenu(const string& firstLevelId)
-{
-    auto start = [this](const std::string& levelId) {
-         setCurrentLevel(levelId);
-         };
-         auto helpMenu = [&](){
-             showHelpOverlay();
-         };
-         auto quit  = [&](){
-             PostQuitMessage(0);
-             };
-             setCurrentScene(std::make_unique<_menuScene>(
-                                                          start,
-                                                          helpMenu,
-                                                          quit,
-                                                          firstLevelId
-                                                          ));
-}
-
 void _sceneManager::showInGameMenu()
 {
     std::cout << "[mgr] showInGameMenu()\n";
@@ -360,16 +387,23 @@ auto menu = std::make_unique<_menuScene>(
             clearAllScenes();
             this->setCurrentScene(std::make_unique<_menuScene>(
                 /* onStart */ [this](const std::string& lvl){ this->post([this,lvl]{ this->setCurrentLevel(lvl); }); },
-                /* onHelp  */ [this]{
-                    this->showHelpOverlay();
+                // /* onHelp  */ [this]{
+                //     this->pushScene(std::make_unique<HelpScene>(
+                //         /* onClose */ [this]{ this->popScene(); }
+                //     ));
+                /* onHelp     */ [this]{
+                    this->showHelpOverlay(); // calls pushScene(<_help>)
                 },
+
                 /* onQuit  */ [this]{ PostQuitMessage(0); },
-                "level01"
+                "level02"
             ));
         });
     },
     /* onHelp     */ [this]{
-        this->showHelpOverlay();
+        this->pushScene(std::make_unique<HelpScene>(
+            /* onClose */ [this]{ this->popScene(); }
+        ));
     },
     /* onQuit     */ [this]{ this->post([this]{ PostQuitMessage(0); }); }
 );
@@ -406,3 +440,47 @@ bool _sceneManager::isTopInGameMenu() const
 //  return 0;
 //}
 
+
+void _sceneManager::bootMainMenu(const string& firstLevelId)
+{
+    auto start = [this](const std::string& levelId) {
+        setCurrentLevel(levelId);
+    };
+    auto helpMenu = [this](){
+        showHelpOverlay();
+    };
+    auto quit  = [&](){
+        PostQuitMessage(0);
+    };
+    setCurrentScene(std::make_unique<_menuScene>(
+         start,
+         helpMenu,
+         quit,
+         firstLevelId
+         ));
+}
+
+void _sceneManager::showHelpOverlay()
+{
+    pushScene(std::make_unique<HelpScene>(
+        /* onClose */ [this]{ this->popScene(); }
+    ));
+}
+
+void _sceneManager::showGameOverlay(string restartLevelId)
+{
+    clearAllScenes();
+
+    auto menu = std::make_unique<_gameOverHandler>(
+        /* onRestart*/ [this, restartLevelId]{
+            this->setCurrentLevel(restartLevelId);   // <--- uses the id you passed in
+        },
+        /*onMainMenu*/ [this]{
+            this->bootMainMenu("level00");
+        },
+        /*onQuiet*/ [this]{
+            PostQuitMessage(0);
+        }
+    );
+    setCurrentScene(std::move(menu));
+}
