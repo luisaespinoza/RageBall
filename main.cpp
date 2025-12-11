@@ -398,7 +398,7 @@ std::cout << "CWD: " << cwd << std::endl;
 
 	// Create Our OpenGL Window
 	fullscreen=FALSE;
-	if (!CreateGLWindow("Game Engine Lesson 01",fullscreenWidth,fullscreenHeight,256,fullscreen))
+	if (!CreateGLWindow("Rageball!!!",fullscreenWidth,fullscreenHeight,256,fullscreen))
 	{
 		return 0;				        // Quit If Window Was Not Created
 	}
