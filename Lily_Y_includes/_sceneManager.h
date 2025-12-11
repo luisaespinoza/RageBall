@@ -1,11 +1,14 @@
 #ifndef _SCENEMANAGER_H
 #define _SCENEMANAGER_H
-
 #include<_common.h>
 #include<_light.h>
 #include<_menuScene.h>
 #include<_scene.h>
-#include <_landingPage.h>
+#include<_level00.h>
+#include<_level01.h>
+#include<_landingPage.h>
+#include<_level02.h>
+#include<_gameOverHandler.h>
 
 using LevelFactory = std::function<std::unique_ptr<ILevel>()>;
 
@@ -58,12 +61,6 @@ class _sceneManager
         _sceneManager();
         virtual ~_sceneManager();
 
-        bool startManager = false;
-
-        //New Stuff
-        void bootMainMenu(const string& firstLevelId);
-        void showHelpOverlay();
-
         void initlGL(); //global GL init. This is our top level.
         void applyPerspective(int w, int h); //same reasoning
         void setCurrentScene(std::unique_ptr<_SceneInterface> newScene);
@@ -73,6 +70,7 @@ class _sceneManager
         void resumeFromInGameMenu();
         //load level by id(LevelRegistry -> LoadLevelScene)
         void setCurrentLevel(const std::string& levelId);
+
         void handleResizeEvent(int windowWidth, int windowHeight);
         void updateActiveScene(double dt);
         void renderActiveScene();
@@ -80,10 +78,14 @@ class _sceneManager
         void togglePauseOverlay();
         void clearAllScenes();
         void setCurrentSceneNoEnter(std::unique_ptr<_SceneInterface> newScene);
+        void bootMainMenu(const std::string& firstLevelId = "level01");
+        void showHelpOverlay();
+        void showGameOverlay(string restartLevelId);
         _light globalLight;
         bool escWasDown_ = false;
         bool suppressEnterNext_ = false;
         bool isTopInGameMenu() const;
+        bool startManager = false;
     protected:
 
     private:
