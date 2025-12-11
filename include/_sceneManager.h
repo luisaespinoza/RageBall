@@ -7,6 +7,8 @@
 #include<_level00.h>
 #include<_level01.h>
 #include<_landingPage.h>
+#include<_level02.h>
+#include<_gameOverHandler.h>
 
 using LevelFactory = std::function<std::unique_ptr<ILevel>()>;
 
@@ -78,6 +80,8 @@ class _sceneManager
         void setCurrentSceneNoEnter(std::unique_ptr<_SceneInterface> newScene);
         void bootMainMenu(const std::string& firstLevelId = "level01");
         void showHelpOverlay();
+        void showGameOverlay(std::string restartLevelId);
+
         _light globalLight;
         bool escWasDown_ = false;
         bool suppressEnterNext_ = false;
@@ -86,7 +90,7 @@ class _sceneManager
     protected:
 
     private:
-
+        string currentLevelId_ = "level00";
         std::vector<std::unique_ptr<_SceneInterface>> sceneStack_;
         std::unique_ptr<_SceneInterface> preservedScene_;
         std::vector<std::function<void()>> pendingOps_;

@@ -141,7 +141,8 @@ void _level02::loadAssets()
 
      // SOUNDS INIT //
     _sounds::initSoundEngine();
-    soundEngine->playMusic("sounds/level00_music.mp3", musicVolume);
+    soundEngine->stopAllSounds();
+    soundEngine->playMusic("sounds/level02_music.mp3", musicVolume);
     soundEngine->playSounds("sounds/level_transition.mp3", false, transitionLevelVolume, 0.8f);
 }
 
@@ -230,8 +231,8 @@ void _level02::render(const RenderFlags& flags)
     glPushMatrix();
       arena.render();
     glPopMatrix();
-      arenaMidlineHitBox.displayBoundingBox();
-      arenaHitBox.displayBoundingBox();
+      //arenaMidlineHitBox.displayBoundingBox();
+      //arenaHitBox.displayBoundingBox();
 
     //Render the player and cube
     glPushMatrix();
@@ -640,17 +641,26 @@ void _level02::updatePlayer(double dt)
 
 
     //Throw mechanics
+    //Throw mechanics
     const bool leftMouse = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
     if(leftMouse)
     {
-        if(ballPower > 0.0f && ballTimer->getTicks() >= 500)
+        if(ballPower > 0.0f && ballTimer->getTicks() >= 1000)
         {
+            cout << "Thrown Hold Ball" << endl;
             createBall();
+            ballPower = 0.0f;
             ballTimer->reset();
         }
+        else if(ballTimer->getTicks() >= 200)
+        {
+            cout << "Throw regular ball" << endl;
+            createBall();
+        }
 
-        ballPower = 0.0f;
-        ballThrowTimer->reset();
+        ballTimer->reset();
+        if(ballThrowTimer)
+            ballThrowTimer->reset();
     }
 
     //Clamp inside of the box
@@ -738,10 +748,13 @@ void _level02::playerHitCube()
         if(player->life == 0)
         {
             cout << "Game Over!" << endl;
-            if(requestGameOver_)
-            {
-                requestGameOver_();
+            if (requestNextLevel_ && !nextLevelId_.empty()) {
+                requestNextLevel_("menu");
             }
+            // if(requestGameOver_)
+            // {
+            //     requestGameOver_();
+            // }
             return;
         }
 
@@ -790,8 +803,11 @@ void _level02::playerHitEnemy()
             if(player->life == 0)
             {
                 cout << "Game Over!" << endl;
-                if(requestGameOver_)
-                    requestGameOver_();
+                if (requestNextLevel_ && !nextLevelId_.empty()) {
+                    requestNextLevel_("menu");
+                }
+                // if(requestGameOver_)
+                //     requestGameOver_();
             }
             return;
         }

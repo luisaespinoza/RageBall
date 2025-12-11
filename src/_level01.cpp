@@ -412,6 +412,7 @@ void _level01::loadAssets() {
     halls.clear();
     // Collision Checker //
     collisionChecker = new _collisionCheck();
+    soundEngine = new _sounds();
     // Pickup item -- swap to vector to add multiple later
     pickupItem = new _pickup();
     pickupItem->pickupInit(_pickup::HEALTH);
@@ -436,6 +437,9 @@ survivalTime = 60.0f;
 survivalActive = true;
 player->playerResetLife(1);
 
+    _sounds::initSoundEngine();
+    soundEngine->stopAllSounds();
+    soundEngine->playMusic("sounds/level01_music.mp3",0.30f);
     mdTimer->reset();
     bool loaded = false;
     if (!levelPath_.empty()) {
@@ -506,7 +510,7 @@ void _level01::unloadAssets()
         delete player;
         player = nullptr;
     }
-
+    delete soundEngine; soundEngine = nullptr;
     // Drop textures owned by the level
    // textures.unloadAll();          // or equivalent in your loader
 
@@ -516,13 +520,17 @@ void _level01::unloadAssets()
 
 void _level01::reset()
 {
+    soundEngine->stopAllSounds();
+    soundEngine->playMusic("sounds/level01_music.mp3",0.30f);
     player->playerResetLife(1);
     isCharging  = false;
        chargePower = 0.0f;
     survivalTime = 60.0f;
     survivalActive = true;
+    player->yawDeg = 0.0f;
 
     if (useArena) {
+        arena_.setTransform(0,0,0, /*yaw*/0.f);
         // --- Player spawn on +Z half, facing -Z ---
         const float y0 = 0.5f;
         const float zPlayer = +0.25f * arena_.d_;
@@ -544,6 +552,8 @@ void _level01::reset()
             e->state = Enemy::State::Windup;
             e->stateT = 0.0f;
         }
+        arena_.configure(/*w*/12.f, /*h*/6.f, /*d*/24.f);
+        arena_.setTransform(0,0,0, /*yaw*/0.f);
         return;
     }
 
@@ -641,7 +651,7 @@ if (survivalActive) {
         survivalActive = false;
 
         std::cout << "[timer] Time's up!\n";
-
+        
         // Treat survival completion as level completion:
         if (!firedNext_ && requestNextLevel_ && !nextLevelId_.empty()) {
             firedNext_ = true;
@@ -717,19 +727,17 @@ if (tookHit) {
     player->hurtCooldown = 1.0f;
     std::cout << "[player] hit! life=" << player->life << "\n";
 
-    if (player->life <= 0) {
-        // GAME OVER: always go back to main menu, independent of nextLevelId_
-        if (!firedNext_ && requestNextLevel_) {
-            firedNext_ = true;
-            requestNextLevel_("menu");  // SceneManager will nuke stack + boot menu
-        } else {
-            // Fallback: keep old behavior if callback isn't wired
-            this->reset();
-        }
-        return;
-    }
-}
 
+}
+if(player->life == 0)
+        {
+            cout << "Game Over!" << endl;
+            if(requestGameOver_)
+            {
+                requestGameOver_();
+            }
+            return;
+        }
 
 
         }

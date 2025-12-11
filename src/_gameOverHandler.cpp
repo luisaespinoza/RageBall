@@ -14,9 +14,9 @@ void _gameOverHandler::render() //credit to Lily_Y for the help menu code
 {
     GLint vp[4];
     glGetIntegerv(GL_VIEWPORT, vp);
-    overScene.W = vp[2]; // width
-    overScene.H = vp[3]; // height
-
+    if (vp[2] != overScene.W || vp[3] != overScene.H) {
+        overScene.setDimensions(vp[2], vp[3]);
+    }
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
     glMatrixMode(GL_PROJECTION);
@@ -31,7 +31,6 @@ void _gameOverHandler::render() //credit to Lily_Y for the help menu code
     glEnable(GL_TEXTURE_2D);
 
     overScene.drawGameOver();
-    overScene.draw();
 
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -59,26 +58,20 @@ int _gameOverHandler::winMsg(HWND, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         case WM_LBUTTONDOWN:
             {
                 int mx = LOWORD(lParam), my = HIWORD(lParam);
-                int myInv = overScene.H - my; //Helps to match the windows mouse Y to openGl's Y
-
-                //Restart
-                if(overScene.hit(overScene.btnRestart, mx, myInv))
+                switch (overScene.hit(mx, my))
                 {
-                    if(onRestart_) onRestart_();
+                    case GAMEOVER_RESTART:
+                        if(onRestart_) onRestart_();
+                        break;
+                    case GAMEOVER_MAINMENU:
+                        if(onMainMenu_) onMainMenu_();
+                        break;
+                    case GAMEOVER_QUIT:
+                        if(onQuit_) onQuit_();
+                        break;
+                    default:
+                        break;
                 }
-
-                //MainMenu
-                if(overScene.hit(overScene.btnMainMenu, mx, myInv))
-                {
-                    if(onMainMenu_) onMainMenu_();
-                }
-
-                //Quit
-                if(overScene.hit(overScene.btnQuit, mx, myInv))
-                {
-                    if(onQuit_) onQuit_();
-                }
-
                 return 0;
                 break;
             }
