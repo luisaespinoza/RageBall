@@ -1,0 +1,394 @@
+# depslib dependency file v1.0
+1765419198 source:c:\users\lui\desktop\3dgames\rageball\src\_3dmodelloader.cpp
+	"_3dmodelloader.h"
+
+1765401726 c:\users\lui\desktop\3dgames\rageball\include\_3dmodelloader.h
+	<_common.h>
+	<_textureloader.h>
+	"Anorms.h"
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_common.h
+	<iostream>
+	<windows.h>
+	<string>
+	<gl/gl.h>
+	<GL/glu.h>
+	<GL/glut.h>
+	<GL/glext.h>
+	<math.h>
+	<stdlib.h>
+	<time.h>
+	<memory>
+	<vector>
+	<fstream>
+	<sstream>
+	<cassert>
+	<functional>
+	<unordered_map>
+	<cmath>
+	<limits>
+	<algorithm>
+	<cstring>
+	<cstdio>
+	<chrono>
+	<random>
+
+1759975386 c:\users\lui\desktop\3dgames\common\include\gl\glut.h
+	<windows.h>
+	<stdlib.h>
+	<GL/gl.h>
+	<GL/glu.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_textureloader.h
+	<_common.h>
+	<SOIL2.h>
+
+1758760881 c:\users\lui\desktop\3dgames\common\include\soil2.h
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\anorms.h
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_arenaroom.cpp
+	"_arenaRoom.h"
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_arenaroom.h
+	<_common.h>
+	<_player.h>
+	<_textureloader.h>
+	<_geometryUtils.h>
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_player.h
+	<_3dmodelloader.h>
+	<_common.h>
+	<_textureloader.h>
+	<_bullets.h>
+	<_spatialNav.h>
+	<_character.h>
+	<_animation.h>
+	<_timerPlusPlus.h>
+	<_model.h>
+
+1765426905 c:\users\lui\desktop\3dgames\rageball\include\_bullets.h
+	<_common.h>
+	<_textureloader.h>
+	<_timer.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_timer.h
+	<_common.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_spatialnav.h
+	<_common.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_character.h
+	<_common.h>
+	<_bullets.h>
+	<_spatialNav.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_geometryutils.h
+	<_common.h>
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_bullets.cpp
+	"_bullets.h"
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_camera.cpp
+	"_camera.h"
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_camera.h
+	<_common.h>
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_character.cpp
+	"_character.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_collisioncheck.cpp
+	"_collisioncheck.h"
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_collisioncheck.h
+	<_common.h>
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_enemy.cpp
+	"_enemy.h"
+
+1765320312 c:\users\lui\desktop\3dgames\rageball\include\_enemy.h
+	<_common.h>
+	<_trajectories.h>
+	<_spatialNav.h>
+	"_character.h"
+	<_3dmodelloader.h>
+	<_player.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_trajectories.h
+	<_common.h>
+	<_bullets.h>
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_geometryutils.cpp
+	"_geometryUtils.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_hallway.cpp
+	"_hallway.h"
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_hallway.h
+	<_common.h>
+	<_player.h>
+	<_geometryUtils.h>
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_inputs.cpp
+	"_inputs.h"
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_inputs.h
+	<_common.h>
+	<_model.h>
+	<_parallax.h>
+	<_skybox.h>
+	<_sprite.h>
+	<_camera.h>
+	<_3dmodelloader.h>
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_model.h
+	<_common.h>
+	<_textureloader.h>
+	<_objloader.h>
+	<_boundingBox.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_parallax.h
+	<_common.h>
+	<_textureLoader.h>
+	<_timer.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_skybox.h
+	<_common.h>
+	<_textureloader.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_sprite.h
+	<_common.h>
+	<_textureloader.h>
+
+1765425727 source:c:\users\lui\desktop\3dgames\rageball\src\_level01.cpp
+	"_level01.h"
+	<windows.h>
+	<windowsx.h>
+	<cmath>
+
+1765416041 c:\users\lui\desktop\3dgames\rageball\include\_level01.h
+	<_common.h>
+	<_skybox.h>
+	<_textureloader.h>
+	<_hallway.h>
+	<_inputs.h>
+	<_camera.h>
+	<_3dmodelloader.h>
+	<_model.h>
+	<_player.h>
+	<_trajectories.h>
+	<_enemy.h>
+	<_arenaRoom.h>
+	<_sprite.h>
+	<_pickup.h>
+	<_collisioncheck.h>
+	<_timer.h>
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_pickup.h
+	<_common.h>
+	<_sprite.h>
+	<_player.h>
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_light.cpp
+	"_light.h"
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_light.h
+	<_common.h>
+
+1765303852 source:c:\users\lui\desktop\3dgames\rageball\src\_menuscene.cpp
+	"_menuScene.h"
+
+1765303852 c:\users\lui\desktop\3dgames\rageball\include\_menuscene.h
+	<_common.h>
+	<_camera.h>
+	<_bullets.h>
+	<_skybox.h>
+	<_collisioncheck.h>
+	<_help.h>
+	<_3dmodelloader.h>
+
+1765300958 c:\users\lui\desktop\3dgames\rageball\include\_help.h
+	<_common.h>
+	<_helpMenu.h>
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_model.cpp
+	"_model.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_parallax.cpp
+	"_parallax.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_pickup.cpp
+	"_pickup.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_player.cpp
+	<_player.h>
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_scene.cpp
+	"_scene.h"
+
+1765155496 c:\users\lui\desktop\3dgames\rageball\include\_scene.h
+	<_common.h>
+	<_light.h>
+	<_model.h>
+	<_inputs.h>
+	<_textureloader.h>
+	<_parallax.h>
+	<_skybox.h>
+	<_sprite.h>
+	<_timer.h>
+	<_3dmodelloader.h>
+	<_camera.h>
+	<_bullets.h>
+	<_collisioncheck.h>
+	<_level01.h>
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_skybox.cpp
+	"_skybox.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_spatialnav.cpp
+	"_spatialNav.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_sprite.cpp
+	"_sprite.h"
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_textureloader.cpp
+	"_textureloader.h"
+
+1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_timer.cpp
+	"_timer.h"
+
+1765300958 c:\users\lui\desktop\3dgames\rageball\include\_helpmenu.h
+	<_common.h>
+	<_textureloader.h>
+
+1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_help.cpp
+	"_help.h"
+
+1765426597 source:c:\users\lui\desktop\3dgames\rageball\src\_scenemanager.cpp
+	"_sceneManager.h"
+	<windowsx.h>
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_scenemanager.h
+	<_common.h>
+	<_light.h>
+	<_menuScene.h>
+	<_scene.h>
+	<_level00.h>
+	<_level01.h>
+	<_landingPage.h>
+
+1765300958 c:\users\lui\desktop\3dgames\rageball\include\_landingpage.h
+	<_common.h>
+	<windows.h>
+	"_textureloader.h"
+
+1765349925 source:c:\users\lui\desktop\3dgames\rageball\main.cpp
+	<windows.h>
+	<stdlib.h>
+	<iostream>
+	<windows.h>
+	<gl/gl.h>
+	<_common.h>
+	<gl/glu.h>
+	<_sceneManager.h>
+	<_menuScene.h>
+	<_scene.h>
+	<_level01.h>
+	<_level00.h>
+	<_landingPage.h>
+	<_landingPageHandler.h>
+	<direct.h>
+
+1765300958 c:\users\lui\desktop\3dgames\rageball\include\_landingpagehandler.h
+	<_landingPage.h>
+	<windows.h>
+	<_sceneManager.h>
+
+1765159875 source:c:\users\lui\desktop\3dgames\rageball\cmake-build-debug\cmakefiles\4.0.2\compileridcxx\cmakecxxcompilerid.cpp
+
+1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_landingpagehandler.cpp
+	"_landingPageHandler.h"
+	"_textureloader.h"
+
+1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_landingpage.cpp
+	"_landingPage.h"
+
+1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_helpmenu.cpp
+	"_helpMenu.h"
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_animation.h
+	<_common.h>
+	<_model.h>
+	<_timerPlusPlus.h>
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_objloader.h
+	<_common.h>
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_boundingbox.h
+	<_common.h>
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_timerplusplus.h
+	<_common.h>
+
+1765299446 c:\users\lui\desktop\3dgames\rageball\include\_level02.h
+	<_common.h>
+	<_skybox.h>
+	<_textureloader.h>
+	<_hallway.h>
+	<_inputs.h>
+	<_camera.h>
+	<_3dmodelloader.h>
+	<_model.h>
+	<_player.h>
+	<_trajectories.h>
+	<_enemy.h>
+	<_arenaRoom.h>
+	<_sprite.h>
+	<_pickup.h>
+	<_collisioncheck.h>
+	<_timerPlusPlus.h>
+	<_boundingBox.h>
+	<windowsx.h>
+	<_worldObjects.h>
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_worldobjects.h
+	"_model.h"
+	<_timerPlusPlus.h>
+	<_animation.h>
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_animation.cpp
+	<_animation.h>
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_boundingbox.cpp
+	"_boundingBox.h"
+
+1765299446 source:c:\users\lui\desktop\3dgames\rageball\src\_level02.cpp
+	"_level02.h"
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_objloader.cpp
+	<_objloader.h>
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_timerplusplus.cpp
+	"_timerPlusPlus.h"
+
+1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_worldobjects.cpp
+	"_worldObjects.h"
+
+1765337735 c:\users\lui\desktop\3dgames\rageball\include\_level00.h
+	<_common.h>
+	<_textureloader.h>
+	<_camera.h>
+	<_model.h>
+	<_player.h>
+	<_sprite.h>
+	<_pickup.h>
+	<_collisioncheck.h>
+	<_timerPlusPlus.h>
+	<_boundingBox.h>
+	<windowsx.h>
+	<_worldObjects.h>
+
+1765357568 source:c:\users\lui\desktop\3dgames\rageball\src\_level00.cpp
+	"_level00.h"
+
