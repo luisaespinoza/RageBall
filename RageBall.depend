@@ -1,13 +1,13 @@
 # depslib dependency file v1.0
-1765419198 source:c:\users\lui\desktop\3dgames\rageball\src\_3dmodelloader.cpp
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_3dmodelloader.cpp
 	"_3dmodelloader.h"
 
-1765401726 c:\users\lui\desktop\3dgames\rageball\include\_3dmodelloader.h
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_3dmodelloader.h
 	<_common.h>
 	<_textureloader.h>
 	"Anorms.h"
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_common.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_common.h
 	<iostream>
 	<windows.h>
 	<string>
@@ -56,7 +56,7 @@
 	<_textureloader.h>
 	<_geometryUtils.h>
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_player.h
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_player.h
 	<_3dmodelloader.h>
 	<_common.h>
 	<_textureloader.h>
@@ -67,7 +67,7 @@
 	<_timerPlusPlus.h>
 	<_model.h>
 
-1765426905 c:\users\lui\desktop\3dgames\rageball\include\_bullets.h
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_bullets.h
 	<_common.h>
 	<_textureloader.h>
 	<_timer.h>
@@ -89,13 +89,13 @@
 1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_bullets.cpp
 	"_bullets.h"
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_camera.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_camera.cpp
 	"_camera.h"
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_camera.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_camera.h
 	<_common.h>
 
-1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_character.cpp
+1765427332 source:c:\users\lui\desktop\3dgames\rageball\src\_character.cpp
 	"_character.h"
 
 1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_collisioncheck.cpp
@@ -104,10 +104,10 @@
 1765155496 c:\users\lui\desktop\3dgames\rageball\include\_collisioncheck.h
 	<_common.h>
 
-1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_enemy.cpp
+1765427332 source:c:\users\lui\desktop\3dgames\rageball\src\_enemy.cpp
 	"_enemy.h"
 
-1765320312 c:\users\lui\desktop\3dgames\rageball\include\_enemy.h
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_enemy.h
 	<_common.h>
 	<_trajectories.h>
 	<_spatialNav.h>
@@ -130,7 +130,7 @@
 	<_player.h>
 	<_geometryUtils.h>
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_inputs.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_inputs.cpp
 	"_inputs.h"
 
 1765155496 c:\users\lui\desktop\3dgames\rageball\include\_inputs.h
@@ -142,11 +142,12 @@
 	<_camera.h>
 	<_3dmodelloader.h>
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_model.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_model.h
 	<_common.h>
 	<_textureloader.h>
 	<_objloader.h>
 	<_boundingBox.h>
+	<_timerPlusPlus.h>
 
 1765155496 c:\users\lui\desktop\3dgames\rageball\include\_parallax.h
 	<_common.h>
@@ -161,13 +162,13 @@
 	<_common.h>
 	<_textureloader.h>
 
-1765425727 source:c:\users\lui\desktop\3dgames\rageball\src\_level01.cpp
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_level01.cpp
 	"_level01.h"
 	<windows.h>
 	<windowsx.h>
 	<cmath>
 
-1765416041 c:\users\lui\desktop\3dgames\rageball\include\_level01.h
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_level01.h
 	<_common.h>
 	<_skybox.h>
 	<_textureloader.h>
@@ -196,10 +197,10 @@
 1765155496 c:\users\lui\desktop\3dgames\rageball\include\_light.h
 	<_common.h>
 
-1765303852 source:c:\users\lui\desktop\3dgames\rageball\src\_menuscene.cpp
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_menuscene.cpp
 	"_menuScene.h"
 
-1765303852 c:\users\lui\desktop\3dgames\rageball\include\_menuscene.h
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_menuscene.h
 	<_common.h>
 	<_camera.h>
 	<_bullets.h>
@@ -208,11 +209,11 @@
 	<_help.h>
 	<_3dmodelloader.h>
 
-1765300958 c:\users\lui\desktop\3dgames\rageball\include\_help.h
+1765427332 c:\users\lui\desktop\3dgames\rageball\include\_help.h
 	<_common.h>
 	<_helpMenu.h>
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_model.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_model.cpp
 	"_model.h"
 
 1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_parallax.cpp
@@ -252,24 +253,24 @@
 1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_sprite.cpp
 	"_sprite.h"
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_textureloader.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_textureloader.cpp
 	"_textureloader.h"
 
 1765155496 source:c:\users\lui\desktop\3dgames\rageball\src\_timer.cpp
 	"_timer.h"
 
-1765300958 c:\users\lui\desktop\3dgames\rageball\include\_helpmenu.h
+1765427332 c:\users\lui\desktop\3dgames\rageball\include\_helpmenu.h
 	<_common.h>
 	<_textureloader.h>
 
-1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_help.cpp
+1765427332 source:c:\users\lui\desktop\3dgames\rageball\src\_help.cpp
 	"_help.h"
 
-1765426597 source:c:\users\lui\desktop\3dgames\rageball\src\_scenemanager.cpp
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_scenemanager.cpp
 	"_sceneManager.h"
 	<windowsx.h>
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_scenemanager.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_scenemanager.h
 	<_common.h>
 	<_light.h>
 	<_menuScene.h>
@@ -278,12 +279,12 @@
 	<_level01.h>
 	<_landingPage.h>
 
-1765300958 c:\users\lui\desktop\3dgames\rageball\include\_landingpage.h
+1765427332 c:\users\lui\desktop\3dgames\rageball\include\_landingpage.h
 	<_common.h>
 	<windows.h>
 	"_textureloader.h"
 
-1765349925 source:c:\users\lui\desktop\3dgames\rageball\main.cpp
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\main.cpp
 	<windows.h>
 	<stdlib.h>
 	<iostream>
@@ -300,35 +301,35 @@
 	<_landingPageHandler.h>
 	<direct.h>
 
-1765300958 c:\users\lui\desktop\3dgames\rageball\include\_landingpagehandler.h
+1765427332 c:\users\lui\desktop\3dgames\rageball\include\_landingpagehandler.h
 	<_landingPage.h>
 	<windows.h>
 	<_sceneManager.h>
 
 1765159875 source:c:\users\lui\desktop\3dgames\rageball\cmake-build-debug\cmakefiles\4.0.2\compileridcxx\cmakecxxcompilerid.cpp
 
-1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_landingpagehandler.cpp
+1765427332 source:c:\users\lui\desktop\3dgames\rageball\src\_landingpagehandler.cpp
 	"_landingPageHandler.h"
 	"_textureloader.h"
 
-1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_landingpage.cpp
+1765427332 source:c:\users\lui\desktop\3dgames\rageball\src\_landingpage.cpp
 	"_landingPage.h"
 
-1765300958 source:c:\users\lui\desktop\3dgames\rageball\src\_helpmenu.cpp
+1765427332 source:c:\users\lui\desktop\3dgames\rageball\src\_helpmenu.cpp
 	"_helpMenu.h"
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_animation.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_animation.h
 	<_common.h>
 	<_model.h>
 	<_timerPlusPlus.h>
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_objloader.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_objloader.h
 	<_common.h>
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_boundingbox.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_boundingbox.h
 	<_common.h>
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_timerplusplus.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_timerplusplus.h
 	<_common.h>
 
 1765299446 c:\users\lui\desktop\3dgames\rageball\include\_level02.h
@@ -352,30 +353,30 @@
 	<windowsx.h>
 	<_worldObjects.h>
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_worldobjects.h
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_worldobjects.h
 	"_model.h"
 	<_timerPlusPlus.h>
 	<_animation.h>
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_animation.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_animation.cpp
 	<_animation.h>
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_boundingbox.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_boundingbox.cpp
 	"_boundingBox.h"
 
 1765299446 source:c:\users\lui\desktop\3dgames\rageball\src\_level02.cpp
 	"_level02.h"
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_objloader.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_objloader.cpp
 	<_objloader.h>
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_timerplusplus.cpp
+1765427528 source:c:\users\lui\desktop\3dgames\rageball\src\_timerplusplus.cpp
 	"_timerPlusPlus.h"
 
-1765337735 source:c:\users\lui\desktop\3dgames\rageball\src\_worldobjects.cpp
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_worldobjects.cpp
 	"_worldObjects.h"
 
-1765337735 c:\users\lui\desktop\3dgames\rageball\include\_level00.h
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_level00.h
 	<_common.h>
 	<_textureloader.h>
 	<_camera.h>
@@ -388,7 +389,114 @@
 	<_boundingBox.h>
 	<windowsx.h>
 	<_worldObjects.h>
+	<_sounds.h>
+	<_skysphere.h>
 
-1765357568 source:c:\users\lui\desktop\3dgames\rageball\src\_level00.cpp
+1765427843 source:c:\users\lui\desktop\3dgames\rageball\src\_level00.cpp
 	"_level00.h"
+
+1765427528 c:\users\lui\desktop\3dgames\rageball\include\_sounds.h
+	<_common.h>
+	<SNDS/irrKlang.h>
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\irrklang.h
+	"ik_irrKlangTypes.h"
+	"ik_vec3d.h"
+	"ik_IRefCounted.h"
+	"ik_IVirtualRefCounted.h"
+	"ik_ESoundOutputDrivers.h"
+	"ik_ESoundEngineOptions.h"
+	"ik_EStreamModes.h"
+	"ik_SAudioStreamFormat.h"
+	"ik_ISoundEngine.h"
+	"ik_ISoundSource.h"
+	"ik_ISound.h"
+	"ik_IAudioStream.h"
+	"ik_IAudioStreamLoader.h"
+	"ik_ISoundEffectControl.h"
+	"ik_ISoundStopEventReceiver.h"
+	"ik_IFileFactory.h"
+	"ik_IFileReader.h"
+	"ik_ISoundDeviceList.h"
+	"ik_IAudioRecorder.h"
+	"ik_ISoundMixedOutputReceiver.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_irrklangtypes.h
+	<wchar.h>
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_vec3d.h
+	<math.h>
+	"ik_irrKlangTypes.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_irefcounted.h
+	"ik_irrKlangTypes.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_ivirtualrefcounted.h
+	"ik_irrKlangTypes.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_esoundoutputdrivers.h
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_esoundengineoptions.h
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_estreammodes.h
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_saudiostreamformat.h
+	"ik_IRefCounted.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_isoundengine.h
+	"ik_IRefCounted.h"
+	"ik_vec3d.h"
+	"ik_ISoundSource.h"
+	"ik_ISound.h"
+	"ik_EStreamModes.h"
+	"ik_IFileFactory.h"
+	"ik_ISoundMixedOutputReceiver.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_isoundsource.h
+	"ik_IVirtualRefCounted.h"
+	"ik_vec3d.h"
+	"ik_EStreamModes.h"
+	"ik_SAudioStreamFormat.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_isound.h
+	"ik_IVirtualRefCounted.h"
+	"ik_ISoundEffectControl.h"
+	"ik_vec3d.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_isoundeffectcontrol.h
+	"ik_IVirtualRefCounted.h"
+	"ik_vec3d.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_ifilefactory.h
+	"ik_IRefCounted.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_isoundmixedoutputreceiver.h
+	"ik_IRefCounted.h"
+	"ik_SAudioStreamFormat.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_iaudiostream.h
+	"ik_IRefCounted.h"
+	"ik_SAudioStreamFormat.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_iaudiostreamloader.h
+	"ik_IRefCounted.h"
+	"ik_IFileReader.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_ifilereader.h
+	"ik_IRefCounted.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_isoundstopeventreceiver.h
+	"ik_IRefCounted.h"
+	"ik_SAudioStreamFormat.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_isounddevicelist.h
+	"ik_IRefCounted.h"
+
+1762827556 c:\users\lui\desktop\3dgames\common\include\snds\ik_iaudiorecorder.h
+	"ik_IRefCounted.h"
+	"ik_ISoundSource.h"
+
+1765427843 c:\users\lui\desktop\3dgames\rageball\include\_skysphere.h
+	<_common.h>
+	<_textureloader.h>
 
