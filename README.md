@@ -36,9 +36,6 @@
 - **Level01 Gameplay Loop**  
   - `_level01.h` → Arena logic, enemy spawning, survival timer, hazards, input/camera routing, throw mechanics, timers, collision flow, multi-enemy behavior.
 
-- **Hallway System (Level Structure)**  
-  - `_hallway.h` → Modular hallway segments, texturing, chaining, yaw alignment, obstacle logic, world↔local movement clamping.
-
 #### Game Flow / Scene Infrastructure
 - **Scene Manager**  
   - `_sceneManager.h` → Scene stack, pause overlays, scene transitions, level loading, global light, input forwarding.
