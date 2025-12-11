@@ -33,7 +33,6 @@ void _level00::loadAssets() {
     // PLAYER INIT //
     player->vec_scale = {0.15f, 0.15f, 0.15f};
     player->initPlayer();
-    player->position = {0.0f, 10.0f, 25.0f};
     playerHitBox->initBoundingBox({0.25f, 1.0f, 0.25f}, {player->position.x, player->position.y + 1.5f, player->position.z}, {1.0f, 1.0f, 1.0f});
     // ARENA MODELS INTI //
     // models
@@ -82,8 +81,9 @@ void _level00::loadAssets() {
     soundEngine->playMusic("sounds/level00_music.mp3", musicVolume);
     soundEngine->playSounds("sounds/level_transition.mp3", false, transitionLevelVolume, 0.8f);
     // start game 
-    currentStage = LEVEL00_PLAYING_0;
     updateDirector(true); // force update to spawn initial targets
+    currentStage = LEVEL00_PLAYING_0;
+    player->position = {0.0f, 20.0f, 25.0f};
 }
 
 void _level00::unloadAssets()
@@ -224,7 +224,7 @@ void _level00::applyCamera() {
 void _level00::reset() {
     soundEngine->stopAllSounds();
     currentStage = LEVEL00_INIT;
-    player->position = {0.0f, 4.0f, 25.0f};
+    player->position = {0.0f, 10.0f, 25.0f};
     playerHealth = 3;
     playerLastHitid = -1;
     // delete existing balls/targets/throwers
