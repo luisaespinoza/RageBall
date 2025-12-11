@@ -16,6 +16,7 @@
 #include<_pickup.h>
 #include<_collisioncheck.h>
 #include<_timer.h>
+#include<_sounds.h>
 
 
 class _level01 : public ILevel {
@@ -29,6 +30,8 @@ public:
     void handleKey(UINT uMsg, WPARAM wParam);
     const char* id() const override { return "level01"; }
 
+        using RequestGameOverFun = std::function<void()>;
+
     void loadAssets() override;
     void unloadAssets() override;
     void reset() override;
@@ -39,12 +42,15 @@ public:
     bool loadFromTextFile(const std::string& path);
     void setNextLevelId(const std::string& id) { nextLevelId_ = id; }
     void setRequestNextLevel(std::function<void(const std::string&) > cb) { requestNextLevel_ = std::move(cb); }
+    void setRequestGameOver(RequestGameOverFun fn) { requestGameOver_ = std::move(fn); }
+
     // From a Scene click (world-unprojected), request the player to throw.
     void throwBallAtWorld(double wx, double wy, double wz);
     //shoot along the click ray (near→far)
     void throwBallFromRay(const vec3& rayOrigin, const vec3& rayDir);
 
 private:
+    _sounds* soundEngine = nullptr;
     Player*        player       = nullptr;
     _inputs*       levelInput   = nullptr;
     _textureLoader textures;
@@ -61,6 +67,7 @@ private:
     // Survival timer
     float survivalTime = 60.0f;       // 60 seconds
     bool survivalActive = false;
+        RequestGameOverFun requestGameOver_;
 
 
     struct ThrowerAI { float cooldown = 1.6f; float t = 0.f; };

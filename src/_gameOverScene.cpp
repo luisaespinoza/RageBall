@@ -5,9 +5,22 @@ _gameOverScene::_gameOverScene(int width, int height)
   //ctor
     W = width;
     H = height;
-    btnRestart = {W/2 - 330, 453, 324, 75};
-    btnMainMenu = {W/2 - 330, 336, 324, 75};
-    btnQuit = {W/2 - 330, 223, 324, 75};
+    // Restart Button
+    restart.type = GAMEOVER_RESTART;
+    restart.original_position = {105,285};
+    restart.original_dimensions = {485,120}; 
+    buttons.push_back(restart);
+    // Main Menu Button
+    mainMenu.type = GAMEOVER_MAINMENU;
+    mainMenu.original_position = {105,460};
+    mainMenu.original_dimensions = {485,120};
+    buttons.push_back(mainMenu);
+    // Quit Button
+    quit.type = GAMEOVER_QUIT;
+    quit.original_position = {105,630};
+    quit.original_dimensions = {485,120};
+    buttons.push_back(quit);
+    
     myTex = new _textureLoader();
 }
 
@@ -29,59 +42,47 @@ void _gameOverScene::drawTextureBackground(const char* path)
 {
     if(backgroundTex != 0)
         return;
-
     backgroundTex = myTex->loadTexture(const_cast<char*> (path));
 }
 
-void _gameOverScene::drawButton(const buttonGameOver& r)
+GameOverButton _gameOverScene::hit(int mouseX, int mouseY)
 {
-    //Make transparent
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    //This draws the box
-    glColor4f(1.0f, 1.0f, 1.0f, 0.0f);  //alpha = 0 -> transparent
-    glBegin(GL_QUADS);
-      glVertex2i(r.x, r.y);
-      glVertex2i(r.x+r.w, r.y);
-      glVertex2i(r.x+r.w, r.y+r.h);
-      glVertex2i(r.x, r.y+r.h);
-    glEnd();
-
-    /*
-    glColor3f(0, 0, 0);
-    drawText(r.x+(r.w/2 - (int)strlen(label) * 5),
-             r.y+r.h/2 + 5, label);
-    glColor3f(1,1,1);
-    */
-    glDisable(GL_BLEND);
-
+    //mouseY = H - mouseY; //Invert Y to match OpenGL coordinates
+    if (enableDebugging) { cout << "Mouse Click at: " << mouseX << ", " << mouseY << endl; }
+    for (int i = 0; i < buttons.size(); i++) {
+        button& btn = buttons[i];
+        if (mouseX >= btn.adjusted_position.x &&
+            mouseX <= btn.adjusted_position.x + btn.adjusted_dimensions.x &&
+            mouseY >= btn.adjusted_position.y &&
+            mouseY <= btn.adjusted_position.y + btn.adjusted_dimensions.y) {
+            if (enableDebugging) { cout << "Button Hit: " << btn.type << endl; }
+            return btn.type;
+        }
+    }
+    if (enableDebugging) { cout << "No Button Hit" << endl; }
+    return GAMEOVER_NONE;
 }
 
-bool _gameOverScene::hit(const buttonGameOver& r, int mx, int my)
+void _gameOverScene::setDimensions(int width, int height)
 {
-    return mx >= r.x && mx<= r.x + r.w &&
-           my >= r.y && my <= r.y + r.h;
-}
-
-void _gameOverScene::draw()
-{
-
-    glColor3f(1,1,1);
-    //drawText(W/2-60, H -120, "Help");
-/*
-    //Shows text on screen
-    glColor3f(1, 1, 1);
-    drawText(80, H-180, "WASD: MOVE");
-    drawText(80, H-210, "Mouse: LOOK");
-    drawText(80, H-240, "Left Click: Shoot");
-    drawText(80, H-270, "ESC: Pause");
-*/
-    //Back used to go to main menu;
-    glColor3f(0.9f, 0.9f, 0.95f);
-    drawButton(btnRestart);
-    drawButton(btnMainMenu);
-    drawButton(btnQuit);
+    if (enableDebugging) {
+        cout << "Setting Game Over Scene Dimensions to: " << width << "x" << height << endl;
+        cout << "Original Screen Size: " << W << "x" << H << endl;
+    }
+    W = width;
+    H = height;
+    float scaleX = W / original_canvas_size.x;
+    float scaleY = H / original_canvas_size.y;
+    if (enableDebugging) {
+        cout << "Scale Factors - X: " << scaleX << ", Y: " << scaleY << endl;
+    }
+    for (int i = 0; i < buttons.size(); i++) {
+        button& btn = buttons[i];
+        btn.adjusted_position.x = btn.original_position.x * scaleX;
+        btn.adjusted_position.y = btn.original_position.y * scaleY;
+        btn.adjusted_dimensions.x = btn.original_dimensions.x * scaleX;
+        btn.adjusted_dimensions.y = btn.original_dimensions.y * scaleY;
+    }
 }
 
 void _gameOverScene::drawGameOver()

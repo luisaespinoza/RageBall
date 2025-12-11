@@ -303,7 +303,7 @@ void _level00::updateDirector(bool forceUpdate) {
             case LEVEL00_COMPLETE:
                 //levelComplete = true; //this bool does nothing
                 // transition to next level -> level01
-                soundEngine->stopAllSounds();
+                soundEngine->stopAllSounds();               
                 if (requestNextLevel_ && !nextLevelId_.empty()) {
                     requestNextLevel_(nextLevelId_);
                 }

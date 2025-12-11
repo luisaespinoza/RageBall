@@ -134,7 +134,7 @@ class _level02 : public ILevel
         float playerDeathVolume = 1.0f;
         float throwerHitVolume = 1.0f;
         float throwerDieVolume = 1.0f;
-        float musicVolume = 0.15f;
+        float musicVolume = 0.10f;
         float transitionLevelVolume = 0.5f;
 
         //HELPERS
