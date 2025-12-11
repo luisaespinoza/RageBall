@@ -2,49 +2,62 @@
 #define _MODEL_H
 
 #include<_common.h>
+#include<_textureloader.h>
+#include<_objloader.h>
+#include<_boundingBox.h>
+#include<_timerPlusPlus.h>
 
 class _model
 {
     public:
         _model();
+        // Copy contructor for preloading models for multiple instances
+        _model(const _model& other);
         virtual ~_model();
 
-        double rotateX;
-        double rotateY;
-        double rotateZ;
+        bool ownsResources = true; // required for proper deletion of inherited resouces + copied classes. This is set to true for a sinular instance, but NOT for copies! Only the template owns their heap-allocated memory
 
-        double posX;
-        double posY;
-        double posZ;
+        _textureLoader *texLoader = nullptr;
+        _objLoader *model3DLoader = nullptr;
 
-        double scale;
+        vec3f rotation = {0.0f,0.0f,0.0f};
+        vec3f position = {0.0f,1.0f,0.0f};
+        vec3f scale = {1.0f,1.0f,1.0f};
+        col3f color = {1.0f,1.0f,1.0f};
+        // physics
+        vec3f velocity = {0.0f,0.0f,0.0f};
+        vec3f acceleration = {0.0f,0.0f,0.0f};
 
-        vec3 p;
+        vector<_boundingBox> boundingBoxes; // Models can have multiple bounding boxes for collision detection
 
-        void drawModel();
- /*
+        // Model enabled flag -- disabled by default but init functions set to true. Must be manually set back once changed.
+        bool enabled = false;
 
- for testing. Not a final production solution
+        enum modelType {TEAPOT, TORUS, CUBE, SPHERE, CUSTOM};
+        modelType currentModel;
+        int modelId;
 
- */
-// Reusable teapot instance (no per-frame realloc)
-static _model& TeapotModel() {
-    static _model m;
-    // Keep the model at origin; hallway handles placement
-    m.posX = 0.f; m.posY = 0.f; m.posZ = 0.f;
-    m.rotateX = m.rotateY = m.rotateZ = 0.f;
-    return m;
-}
+        // Initialize model with texture + model
+        void initModel(char* texPath, char* modelPath, modelType currentModel);
+        // Initialize model with texture only (primitive model ONLY)
+        void initModel(char* texPath, modelType currentModel);
+        // Draw the model
+        virtual void drawModel();
+        // Display bounding boxes for debugging
+        void displayBoundingBoxes();
+        // Add a bounding box to the model
+        void addBoundingBox(vec3f dim, vec3f pos, vec3f scale);
+        // Add a bounding box to model with position/scale tied to model's
+        void addBoundingBox(vec3f dim);
+        // Simple AABB (T/F) collision check with another bounding box for ALL in model
+        bool isCollidingWith(const _boundingBox& otherBox);
+        // Penetration Depth collision check with another bounding box for ALL in model
+        vector<_boundingBox::collisionType> checkCollisionWith(const _boundingBox& otherBox);
 
-// Obstacle draw function compatible with your addObstacleLocal(..., drawFn)
-void DrawTeapot() {
-    auto& m = TeapotModel();
-    m.scale = 0.5f;            // pick a size that fits the hallway
-    m.drawModel();             // calls glutSolidTeapot(...) internally
-}
     protected:
 
     private:
+        static int nextModelId;
 };
 
 #endif // _MODEL_H

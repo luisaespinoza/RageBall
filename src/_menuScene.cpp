@@ -9,6 +9,12 @@
 //{
 //    //dtor
 //}
+namespace {
+    constexpr float kMainMenuCubeEdge  = 2.0f;  // matches menuRender()
+    constexpr float kPauseMenuCubeEdge = 1.6f;  // matches pause mode in menuRender()
+    constexpr float kHitPadding        = 0.5f;  // inflate hit volume beyond cube edge
+    constexpr float kMenuBulletRadius = 1.0f;
+}
 
 static bool gSkyLoaded = false;
 static void ensureMenuSkyboxLoaded(_skyBox* sb) {
@@ -42,9 +48,11 @@ _menuScene::_menuScene(ResumeCallback onResumeCb, MainMenuCallback onMainCb, Hel
 void _menuScene::onEnter() {
     char* menuModelFile = "models/megaman/tris.md2";
     menuModel->initModel(menuModelFile);
+    hasLockedBlock = false;
 
     menuBullet.speed=pauseBullet.speed = 36.0f;
-    menuBullet.radius = 1.0f;
+    // menuBullet.radius = 1.0f;
+    menuBullet.radius = pauseBullet.radius = kMenuBulletRadius;
 
   //      std::cout << "[menu] onEnter mode=" << (mode==Mode::InGameMenu?"IGM":"MAIN") << "\n";
     menuBackground->skyBoxInit();
@@ -110,10 +118,15 @@ void _menuScene::mouseMapping(int x, int y) {
 // -------- setup per mode --------
 void _menuScene::enterMainMenu() {
     menuCamera.camInit();
+    hasLockedBlock = false;
+
+    const float halfEdge = kMainMenuCubeEdge * 0.5f;
+    const float blockRadius = halfEdge + kHitPadding; // treat boxes as “bigger”
+
     menuBlocks = {
-        { { -3.0f, 0.0f, -20.0f }, 1.2f, MenuBlock::Type::StartGame },
-        { {  0.0f, 0.0f, -20.0f }, 1.2f, MenuBlock::Type::Help      },
-        { {  3.0f, 0.0f, -20.0f }, 1.2f, MenuBlock::Type::Quit      },
+        { { -3.0f, 0.0f, -20.0f }, blockRadius, MenuBlock::Type::StartGame },
+        { {  0.0f, 0.0f, -20.0f }, blockRadius, MenuBlock::Type::Help      },
+        { {  3.0f, 0.0f, -20.0f }, blockRadius, MenuBlock::Type::Quit      },
     };
 
     menuBullet.actionTrigger = menuBullet.READY;
@@ -121,18 +134,27 @@ void _menuScene::enterMainMenu() {
     menuBullet.t = 0.0f;
 }
 
+
 void _menuScene::enterPause() {
-        pauseCamera.camInit();
-//    pauseCamera = menuCamera; // inherit aim
+    pauseCamera.camInit();
+    hasLockedBlock = false;
+
+    const float halfEdge = kPauseMenuCubeEdge * 0.5f;
+    const float blockRadius = halfEdge + kHitPadding;
+
     pauseBlocks = {
-        { {  0.0f,  3.0f, -12.0f }, 1.0f, MenuBlock::Type::Resume   },
-        { {  0.0f,  1.0f, -12.0f }, 1.0f, MenuBlock::Type::Help     }, // added Help
-        { {  0.0f, -1.0f, -12.0f }, 1.0f, MenuBlock::Type::MainMenu },
-        { {  0.0f, -3.0f, -12.0f }, 1.0f, MenuBlock::Type::Quit     },
+        { {  0.0f,  3.0f, -14.0f }, blockRadius, MenuBlock::Type::Resume   },
+        { {  0.0f,  1.0f, -14.0f }, blockRadius, MenuBlock::Type::Help     },
+        { {  0.0f, -1.0f, -14.0f }, blockRadius, MenuBlock::Type::MainMenu },
+        { {  0.0f, -3.0f, -14.0f }, blockRadius, MenuBlock::Type::Quit     },
     };
+
     pauseBullet.actionTrigger = pauseBullet.READY;
     pauseBullet.live = false;
     pauseBullet.t = 0.0f;
+    // menuBullet.actionTrigger = menuBullet.READY;
+    // menuBullet.live = false;
+    // menuBullet.t = 0.0f;
 }
 
 
@@ -153,21 +175,41 @@ void _menuScene::menuUpdate(double dt) {
     if (!ctx.bullet || !ctx.blocks || !ctx.collision) return;
 
     ctx.bullet->bulletActions(dt);
-    if (!ctx.bullet->live) return;
 
-    constexpr float kBulletRadius = 0.5f;
+    // If the bullet died (range, etc.), clear lock and bail.
+    if (!ctx.bullet->live) {
+        hasLockedBlock = false;
+        return;
+    }
+
+    // No locked block? This shot is just for fun; don't hit the menu.
+    if (!hasLockedBlock) {
+        return;
+    }
+
+    // Use actual bullet radius if set; fall back to 0.5f
+    const float bulletRadius =
+        (ctx.bullet->radius > 0.0f) ? ctx.bullet->radius : 0.5f;
+
     for (const auto& block : *ctx.blocks) {
+        // Only the locked block is allowed to trigger actions
+        if (block.kind != lockedBlockKind) continue;
+
         bool hit = ctx.collision->isSphereCol(
-            ctx.bullet->pos, block.centerPosition,
-            kBulletRadius, block.collisionRadius, 0.0f
+            ctx.bullet->pos,
+            block.centerPosition,
+            bulletRadius,
+            block.collisionRadius,
+            0.0f
         );
         if (!hit) continue;
 
-        // reset bullet
+        // We hit our locked target – clear lock and reset bullet
+        hasLockedBlock = false;
         ctx.bullet->actionTrigger = ctx.bullet->READY;
         ctx.bullet->live = false;
 
-        // dispatch
+        // Dispatch based on mode + block kind
         if (mode == Mode::MainMenu) {
             switch (block.kind) {
                 case MenuBlock::Type::StartGame:
@@ -183,16 +225,25 @@ void _menuScene::menuUpdate(double dt) {
             }
         } else if (mode == Mode::InGameMenu) {
             switch (block.kind) {
-                case MenuBlock::Type::Resume:    if (onResume)     onResume();     return;
-                case MenuBlock::Type::MainMenu:  if (onGoMainMenu) onGoMainMenu(); return;
-                case MenuBlock::Type::Help:      if (onHelp) onHelp();             return;
-                case MenuBlock::Type::Quit:      if (onQuit)       onQuit();       return;
+                case MenuBlock::Type::Resume:
+                    if (onResume) onResume();
+                    return;
+                case MenuBlock::Type::MainMenu:
+                    if (onGoMainMenu) onGoMainMenu();
+                    return;
+                case MenuBlock::Type::Help:
+                    if (onHelp) onHelp();
+                    return;
+                case MenuBlock::Type::Quit:
+                    if (onQuit) onQuit();
+                    return;
                 default: break;
             }
         }
-        return; // stop after first hit
+        return; // safety; we handled our locked block
     }
 }
+
 
 // -------- render --------
 void _menuScene::menuRender() {
@@ -234,7 +285,9 @@ void _menuScene::menuRender() {
 
     // Blocks
 
-    float cubeEdge = (mode == Mode::InGameMenu) ? 1.6f : 2.0f;
+    float cubeEdge = (mode == Mode::InGameMenu) ? kPauseMenuCubeEdge : kMainMenuCubeEdge;
+
+
     for (const auto& block : *ctx.blocks) {
         glPushMatrix();
         glTranslatef(block.centerPosition.x, block.centerPosition.y, block.centerPosition.z);
@@ -284,24 +337,69 @@ void _menuScene::spawnBullet() {
     MenuContext ctx = activeMenuContext();
     if (!ctx.camera || !ctx.bullet) return;
 
-    // Aim from camera eye -> world point under cursor (msX, msY, msZ)
-    //vec3 eye { ctx.camera->eye.x, ctx.camera->eye.y, ctx.camera->eye.z };
-    //from the model. like he is throwing it at it.
-    vec3 eye { 0.0f,-10.0f,-10.0f };
-    vec3 hit { static_cast<float>(msX), static_cast<float>(msY), static_cast<float>(msZ) };
 
-    vec3 dir { hit.x - eye.x, hit.y - eye.y, hit.z - eye.z };
+    vec3 eye { 0.0f, -10.0f, -10.0f };
+
+    // World point under cursor
+    vec3 click {
+        static_cast<float>(msX),
+        static_cast<float>(msY),
+        static_cast<float>(msZ)
+    };
+
+    // Find nearest block in the active menu
+    const std::vector<MenuBlock>* blocks = ctx.blocks;
+    const MenuBlock* nearest = nullptr;
+    float bestDist2 = -1.0f;
+
+    if (blocks) {
+        for (const auto& block : *blocks) {
+            float dx = click.x - block.centerPosition.x;
+            float dy = click.y - block.centerPosition.y;
+            float dz = click.z - block.centerPosition.z;
+            float d2 = dx*dx + dy*dy + dz*dz;
+
+            if (bestDist2 < 0.0f || d2 < bestDist2) {
+                bestDist2 = d2;
+                nearest   = &block;
+            }
+        }
+    }
+
+    // Decide: lock a block, or just shoot where clicked?
+    vec3 target = click;
+    hasLockedBlock = false;
+
+    if (nearest) {
+        float dist = std::sqrt(bestDist2);
+        float lockRadius = nearest->collisionRadius * 1.5f; // tweak this feel
+
+        if (dist <= lockRadius) {
+            // Lock this block and aim at its center
+            hasLockedBlock  = true;
+            lockedBlockKind = nearest->kind;
+            target          = nearest->centerPosition;
+        }
+    }
+
+    // Set up the bullet to travel from eye → target
+    vec3 dir {
+        target.x - eye.x,
+        target.y - eye.y,
+        target.z - eye.z
+    };
     float len = std::sqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z);
     if (len < 1e-5f) return;
-    dir.x/=len; dir.y/=len; dir.z/=len;
+    dir.x /= len; dir.y /= len; dir.z /= len;
 
     ctx.bullet->src  = eye;
-    ctx.bullet->des  = { hit.x, hit.y, hit.z }; // straight to unprojected point
+    ctx.bullet->des  = target;
     ctx.bullet->pos  = ctx.bullet->src;
     ctx.bullet->t    = 0.0f;
     ctx.bullet->live = true;
     ctx.bullet->actionTrigger = ctx.bullet->SHOOT;
 }
+
 
 // -------- helpers --------
 const char* _menuScene::menuBlockLabel(MenuBlock::Type t) const {

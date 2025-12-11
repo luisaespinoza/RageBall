@@ -13,11 +13,27 @@
 #include <iostream>
 #include <windows.h>	// Header File For Windows
 #include <gl/gl.h>
+#include <_common.h>
 
+#include <gl/glu.h>
 #include <_sceneManager.h>
 #include <_menuScene.h>
 #include <_scene.h>
 #include <_level01.h>
+#include <_level00.h>
+
+
+PFNGLGENBUFFERSPROC glGenBuffers = nullptr;
+PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
+PFNGLBUFFERDATAPROC glBufferData = nullptr;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
+
+std::mt19937 RNG::generator;
+bool RNG::initialized = false;
+
+#include <_landingPage.h>
+#include <_landingPageHandler.h>
+
 using namespace std;
 ////////_Scene *myScene = new _Scene(); //Create scene class instance
 //_Scene *myScene - new _Scene();//
@@ -38,6 +54,9 @@ LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 static HCURSOR gCrosshair = nullptr;
 
     _sceneManager scenes;        // top-level game controller
+    _landingPage landing;
+    _landingPageHandler handlerLanding;
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //										THE KILL GL WINDOW
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +151,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		dmScreenSettings.dmSize=sizeof(dmScreenSettings);	// Size Of The Devmode Structure
 		dmScreenSettings.dmPelsWidth	= width;		    // Selected Screen Width
 		dmScreenSettings.dmPelsHeight	= height;		    // Selected Screen Height
-		dmScreenSettings.dmBitsPerPel	= bits;			    // Selected Bits Per Pixel
+		dmScreenSettings.dmBitsPerPel	= bits;			    //  Selected Bits Per Pixel
 		dmScreenSettings.dmFields=DM_BITSPERPEL|DM_PELSWIDTH|DM_PELSHEIGHT;
 
 		dwExStyle=WS_EX_APPWINDOW;				            // Window Extended Style
@@ -226,12 +245,20 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;						                // Return FALSE
 	}
 
+
+	// Load OpenGL functions
+	glGenBuffers = (PFNGLGENBUFFERSPROC)wglGetProcAddress("glGenBuffers");
+    glBindBuffer = (PFNGLBINDBUFFERPROC)wglGetProcAddress("glBindBuffer");
+    glBufferData = (PFNGLBUFFERDATAPROC)wglGetProcAddress("glBufferData");
+    glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
+
 	ShowWindow(hWnd,SW_SHOW);					            // Show The Window
 	SetForegroundWindow(hWnd);					            // Slightly Higher Priority
 	SetFocus(hWnd);							                // Sets Keyboard Focus To The Window
 
 //	myScene->initGL();                                      // initialize GL scene
 //	myScene->reSizeScene(width,height);
+
 
 	return TRUE;							                // Success
 }
@@ -308,7 +335,12 @@ LRESULT CALLBACK WndProc(
 
 		case WM_SIZE:				// Resize The OpenGL Window
 		{
-          scenes.forwardWindowMessage(hWnd,uMsg,wParam,lParam);                         // LoWord=Width, HiWord=Height
+			int newWidth = LOWORD(lParam);  // LoWord=Width
+			int newHeight = HIWORD(lParam); // HiWord=Height
+
+			// resize screen
+			scenes.handleResizeEvent(newWidth, newHeight);
+          	scenes.forwardWindowMessage(hWnd,uMsg,wParam,lParam);                         // LoWord=Width, HiWord=Height
 			return 0;			    // Jump Back
 		}
 
@@ -316,6 +348,11 @@ LRESULT CALLBACK WndProc(
         case WM_RBUTTONDOWN:
         case WM_MBUTTONDOWN:
         case WM_LBUTTONUP:
+            if(landing.isLanding)
+            {
+                handlerLanding.winMsg(hWnd,uMsg,wParam,lParam);
+                return 0;
+            }
         case WM_RBUTTONUP:
         case WM_MBUTTONUP:
         case WM_MOUSEMOVE:
@@ -348,33 +385,31 @@ int WINAPI WinMain(
 
 char cwd[MAX_PATH];
 _getcwd(cwd, MAX_PATH);
+RNG::init();
+
 std::cout << "CWD: " << cwd << std::endl;
 
-	// Ask The User Which Screen Mode They Prefer
-/*	if (MessageBox(NULL," Would You Like To Run In Fullscreen Mode?", "Start FullScreen?",MB_YESNO|MB_ICONQUESTION)==IDNO)
+        // Ask The User Which Screen Mode They Prefer
+    /*	if (MessageBox(NULL," Would You Like To Run In Fullscreen Mode?", "Start FullScreen?",MB_YESNO|MB_ICONQUESTION)==IDNO)
 	{
 		fullscreen=FALSE;			    // Windowed Mode
 	}
-*/
+    */
+
 	// Create Our OpenGL Window
 	fullscreen=FALSE;
 	if (!CreateGLWindow("Game Engine Lesson 01",fullscreenWidth,fullscreenHeight,256,fullscreen))
 	{
 		return 0;				        // Quit If Window Was Not Created
 	}
-	    LevelRegistry::instance().registerLevel("gameplay_intro", [] {
-        return std::make_unique<_level01>();
-    });
 
-    auto start = [&](const std::string& levelId) {
-        scenes.setCurrentLevel(levelId);
-    };
-    auto quit  = [&](){ PostQuitMessage(0); };
-        scenes.initlGL();
-    scenes.applyPerspective(fullscreenWidth, fullscreenHeight);
-// Boot into main menu; when "Start" is clicked, load "gameplay_intro"
-   // scenes.setCurrentScene(std::make_unique<_menuScene>(start, quit, "gameplay_intro"));
-    gCrosshair = LoadCursorFromFileA("images/crosshair.cur");
+	handlerLanding.LandingPage = &landing;
+	handlerLanding.manager = &scenes;
+
+	scenes.initlGL();
+	scenes.applyPerspective(fullscreenWidth, fullscreenHeight);
+
+	 gCrosshair = LoadCursorFromFileA("images/crosshair.cur");
     if (gCrosshair)
                 {
                     SetClassLongPtrA(hWnd, GCLP_HCURSOR, reinterpret_cast<LONG_PTR>(gCrosshair));
@@ -386,6 +421,9 @@ std::cout << "CWD: " << cwd << std::endl;
     LARGE_INTEGER freq{}, prev{}, now{};
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&prev);
+
+    bool gameplayInit = false;
+
 	while(!done)					    // Loop That Runs While done=FALSE
 	//TODO handle prompt to confirm for quit
 
@@ -402,32 +440,42 @@ std::cout << "CWD: " << cwd << std::endl;
 			{
 				TranslateMessage(&msg);	// Translate The Message
 				DispatchMessage(&msg);	// Dispatch The Message
-
-				scenes.forwardWindowMessage(msg.hwnd, msg.message, msg.wParam, msg.lParam);
 			}
-		}
-
-	  else						        // If There Are No Messages
+        }
+        else						        // If There Are No Messages
 		{
-
-			// Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
+            // Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
 			if (!active || keys[VK_ESCAPE])	// Active?  Was There A Quit Received?
 			{
 				//done=TRUE;		        // ESC or DrawGLScene Signalled A Quit
 			}
 			else				        // Not Time To Quit, Update Screen
 			{
-
-//                myScene->drawScene();
                 QueryPerformanceCounter(&now);
                 double dt = double(now.QuadPart - prev.QuadPart) / double(freq.QuadPart);
                 prev = now;
 
-                scenes.updateActiveScene(dt);
-                scenes.renderActiveScene();
-				SwapBuffers(hDC);	    // Swap Buffers (Double Buffering)
+                if(landing.isLanding)
+                {
+                    handlerLanding.loadLandingPage(fullscreenWidth, fullscreenHeight);
+                }
+                else if(scenes.startManager)
+                {
+                    if(!gameplayInit)
+                    {
+                       scenes.bootMainMenu("level00");
+                       gameplayInit = true;
+                    }
+                    // Boot into main menu; when "Start" is clicked, load "gameplay_intro"
+                    scenes.updateActiveScene(dt);
+                    scenes.renderActiveScene();
+                }
+                SwapBuffers(hDC);	    // Swap Buffers (Double Buffering)
 			}
+		}
+	}
 
+		{	
 			if (keys[VK_F1])		    // Is F1 Being Pressed?
 			{
 				keys[VK_F1]=FALSE;	    // If So Make Key FALSE
@@ -440,14 +488,16 @@ std::cout << "CWD: " << cwd << std::endl;
 				{
 					return 0;	        // Quit If Window Was Not Created
 				}
+				scenes.initlGL();
+				scenes.applyPerspective(fullscreenWidth, fullscreenHeight);
 			}
 		}
-	}
-
+	
 
 	// Shutdown
-
+	_sounds::dropSoundEngine(); // destructor for static sound engine
 	KillGLWindow();					    // Kill The Window
     if (gCrosshair) { DestroyCursor(gCrosshair); gCrosshair = nullptr; }
 	return (msg.wParam);				// Exit The Program
+
 }

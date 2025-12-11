@@ -66,6 +66,8 @@ private:
     };
 
     // state
+    MenuBlock::Type lockedBlockKind;
+    bool hasLockedBlock = false;
 
     std::string defaultLevelId;
     _3DModelLoader *menuModel = new _3DModelLoader();

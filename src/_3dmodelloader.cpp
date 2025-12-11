@@ -6,12 +6,21 @@ _3DModelLoader::_3DModelLoader()
     pos.x =0;
     pos.y =0;
     pos.z =-10.0;
+	animTime        = 0.0;
+	animPhaseOffset = 0.0f;
+	animSpeed       = 5.0f;
+	StartFrame      = 0;
+	EndFrame        = 0;
 }
 _3DModelLoader::_3DModelLoader(vec3 initPos)
 {
-    pos.x = initPos.x;
-    pos.y = initPos.y;
-    pos.z = initPos.z;
+	pos   = initPos;
+
+	animTime        = 0.0;
+	animPhaseOffset = 0.0f;
+	animSpeed       = 5.0f;
+	StartFrame      = 0;
+	EndFrame        = 0;
 }
 
 _3DModelLoader::~_3DModelLoader()
@@ -234,25 +243,49 @@ int _3DModelLoader::initModel(const char* filename)
     return 1;
 }
 
-void _3DModelLoader::Draw() { Draw(1.0/60.0); }
+void _3DModelLoader::Draw() {
+	// fallback dt if somebody calls the no-arg version
+	Draw(1.0 / 60.0);
+}
+
 void _3DModelLoader::Draw(double dt)
 {
-    static int n = 0;
-    static float interp = 0.0f;
+	glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
+	// Bind this instance's texture (per-instance tex_id)
+	if (md2file.tex_id) {
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, md2file.tex_id);
+	} else {
+		glDisable(GL_TEXTURE_2D);
+	}
 
-    if (md2file.tex_id) {
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, md2file.tex_id);
-    } else {
-        glDisable(GL_TEXTURE_2D);
-    }
+	// --- animation clock (per instance) ---
+	// dt from your main loop is already in seconds.
+	if (dt < 0.0)
+		dt = 0.0;
+	animTime += dt;
 
-    float advance = animSpeed * (dt > 0 ? (float)dt : 0.0f);
-    interp += advance;
-    Animate(StartFrame, EndFrame, &n, &interp);
+	// This matches the old "globalTime + animPhaseOffset" * globalSpeed.
+	float t = static_cast<float>((animTime + animPhaseOffset) * animSpeed);
 
-    RenderFrameItpWithGLCmds(n, interp, &md2file);
+	int frameCount = EndFrame - StartFrame; // number of blend segments
+	if (frameCount <= 0) {
+		// Degenerate range: just draw StartFrame
+		RenderFrame(StartFrame, &md2file);
+		return;
+	}
+
+	// base frame in [StartFrame, EndFrame-1]
+	int base = StartFrame + (static_cast<int>(t) % frameCount);
+
+	// fractional part [0, 1) between base and base+1
+	float interp = t - floorf(t);
+
+	RenderFrameItpWithGLCmds(base, interp, &md2file);
+	RenderFrameItpWithGLCmds(base, interp, &md2file);
+	glPopAttrib();
 }
+
 //
 //void _3DModelLoader::Draw(double dt)
 //{

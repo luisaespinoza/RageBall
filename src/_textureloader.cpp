@@ -1,8 +1,10 @@
 #include "_textureloader.h"
-
+// #include <_textureloader.h>
 _textureLoader::_textureLoader()
 {
     //ctor
+    width = 0;
+    height = 0;
 }
 
 _textureLoader::~_textureLoader()

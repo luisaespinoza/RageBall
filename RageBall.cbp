@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="RageBall" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/RageBall" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="C:/Users/Lui/Desktop/3dgames/common/bin" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/RageBall" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="C:/Users/Lui/Desktop/3dgames/common/bin" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="C:/Users/Lui/Desktop/3dgames/common/include" />
+			<Add directory="C:/Users/Lui/Desktop/3dgames/RageBall/" />
+			<Add directory="include" />
+			<Add directory="src" />
+		</Compiler>
+		<Linker>
+			<Add library="../common/lib/libSoil.a" />
+			<Add library="../common/lib/glew32.lib" />
+			<Add library="freeglut" />
+			<Add library="opengl32" />
+			<Add library="glu32" />
+			<Add library="winmm" />
+			<Add library="gdi32" />
+			<Add library="../common/lib/libirrKlang.a" />
+			<Add directory="C:/Users/Lui/Desktop/3dgames/common/lib" />
+		</Linker>
+		<Unit filename="include/Anorms.h" />
+		<Unit filename="include/_3dmodelloader.h" />
+		<Unit filename="include/_animation.h" />
+		<Unit filename="include/_arenaRoom.h" />
+		<Unit filename="include/_boundingBox.h" />
+		<Unit filename="include/_bullets.h" />
+		<Unit filename="include/_camera.h" />
+		<Unit filename="include/_character.h" />
+		<Unit filename="include/_collisioncheck.h" />
+		<Unit filename="include/_common.h" />
+		<Unit filename="include/_enemy.h" />
+		<Unit filename="include/_geometryUtils.h" />
+		<Unit filename="include/_hallway.h" />
+		<Unit filename="include/_help.h" />
+		<Unit filename="include/_helpMenu.h" />
+		<Unit filename="include/_inputs.h" />
+		<Unit filename="include/_landingPage.h" />
+		<Unit filename="include/_landingPageHandler.h" />
+		<Unit filename="include/_level00.h" />
+		<Unit filename="include/_level01.h" />
+		<Unit filename="include/_light.h" />
+		<Unit filename="include/_menuScene.h" />
+		<Unit filename="include/_model.h" />
+		<Unit filename="include/_objloader.h" />
+		<Unit filename="include/_parallax.h" />
+		<Unit filename="include/_pickup.h" />
+		<Unit filename="include/_player.h" />
+		<Unit filename="include/_scene.h" />
+		<Unit filename="include/_sceneManager.h" />
+		<Unit filename="include/_skybox.h" />
+		<Unit filename="include/_spatialNav.h" />
+		<Unit filename="include/_sprite.h" />
+		<Unit filename="include/_textureloader.h" />
+		<Unit filename="include/_timer.h" />
+		<Unit filename="include/_timerPlusPlus.h" />
+		<Unit filename="include/_trajectories.h" />
+		<Unit filename="include/_worldObjects.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="src/_3dmodelloader.cpp" />
+		<Unit filename="src/_animation.cpp" />
+		<Unit filename="src/_arenaRoom.cpp" />
+		<Unit filename="src/_boundingBox.cpp" />
+		<Unit filename="src/_bullets.cpp" />
+		<Unit filename="src/_camera.cpp" />
+		<Unit filename="src/_character.cpp" />
+		<Unit filename="src/_collisioncheck.cpp" />
+		<Unit filename="src/_enemy.cpp" />
+		<Unit filename="src/_geometryUtils.cpp" />
+		<Unit filename="src/_hallway.cpp" />
+		<Unit filename="src/_help.cpp" />
+		<Unit filename="src/_helpMenu.cpp" />
+		<Unit filename="src/_inputs.cpp" />
+		<Unit filename="src/_landingPage.cpp" />
+		<Unit filename="src/_landingPageHandler.cpp" />
+		<Unit filename="src/_level00.cpp" />
+		<Unit filename="src/_level01.cpp" />
+		<Unit filename="src/_light.cpp" />
+		<Unit filename="src/_menuScene.cpp" />
+		<Unit filename="src/_model.cpp" />
+		<Unit filename="src/_objloader.cpp" />
+		<Unit filename="src/_parallax.cpp" />
+		<Unit filename="src/_pickup.cpp" />
+		<Unit filename="src/_player.cpp" />
+		<Unit filename="src/_scene.cpp" />
+		<Unit filename="src/_sceneManager.cpp" />
+		<Unit filename="src/_skybox.cpp" />
+		<Unit filename="src/_spatialNav.cpp" />
+		<Unit filename="src/_sprite.cpp" />
+		<Unit filename="src/_textureloader.cpp" />
+		<Unit filename="src/_timer.cpp" />
+		<Unit filename="src/_timerPlusPlus.cpp" />
+		<Unit filename="src/_worldObjects.cpp" />
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

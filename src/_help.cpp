@@ -11,72 +11,58 @@
 //{
 //    //dtor
 //}
-void HelpScene::drawCenteredText(const char* text, float yNDC) {
-    // Simple screen-space text using GLUT bitmap;
-    glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
-    gluOrtho2D(0, width_, 0, height_);
-    glMatrixMode(GL_MODELVIEW);  glPushMatrix(); glLoadIdentity();
+// void HelpScene::drawCenteredText(const char* text, float yNDC) {
+//     // Simple screen-space text using GLUT bitmap;
+//     glMatrixMode(GL_PROJECTION); glPushMatrix(); glLoadIdentity();
+//     gluOrtho2D(0, width_, 0, height_);
+//     glMatrixMode(GL_MODELVIEW);  glPushMatrix(); glLoadIdentity();
+//
+//     int textW = 8 * (int)strlen(text); // ~8px per char with HELVETICA_18
+//     float x = (width_ - textW) * 0.5f;
+//     float y = (height_ * 0.5f) + yNDC;
+//
+//     glDisable(GL_LIGHTING);
+//     glDisable(GL_TEXTURE_2D);
+//     glRasterPos2f(x, y);
+//     for (const char* p = text; *p; ++p) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *p);
+//
+//     glMatrixMode(GL_MODELVIEW);  glPopMatrix();
+//     glMatrixMode(GL_PROJECTION); glPopMatrix();
+// }
+void HelpScene::onEnter()
+{
+    cout << "Hit button" << endl;
+    helpMenuTex.W = width_;
+    helpMenuTex.H = height_;
 
-    int textW = 8 * (int)strlen(text); // ~8px per char with HELVETICA_18
-    float x = (width_ - textW) * 0.5f;
-    float y = (height_ * 0.5f) + yNDC;
+    helpMenuTex.drawTextureBackground("images/help.jpg");
 
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-    glRasterPos2f(x, y);
-    for (const char* p = text; *p; ++p) glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *p);
-
-    glMatrixMode(GL_MODELVIEW);  glPopMatrix();
-    glMatrixMode(GL_PROJECTION); glPopMatrix();
 }
 
-void HelpScene::render() {
-    GLint vp[4];
-    glGetIntegerv(GL_VIEWPORT, vp);
-    int W = vp[2] > 0 ? vp[2] : 800;
-    int H = vp[3] > 0 ? vp[3] : 600;
-
+void HelpScene::render() //credit to Lily_Y for the help menu code
+{
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-    glClearColor(0.2f, 0.2f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     glMatrixMode(GL_PROJECTION);
-    glPushMatrix(); glLoadIdentity();
-    gluOrtho2D(0, W, 0, H);
+    glPushMatrix(); //saves 3D state
+    glLoadIdentity();
+    gluOrtho2D(0,helpMenuTex.W, 0, helpMenuTex.H); //2D view
     glMatrixMode(GL_MODELVIEW);
-    glPushMatrix(); glLoadIdentity();
+    glPushMatrix(); //saves camera state
+    glLoadIdentity();
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_2D);
 
-    const char* lines[] = {
-        "HELP SCREEN",
-        "-------------",
-        "Main Menu",
-        "Click a cube to select an action.",
-        "Press ESC to open the in-game menu.",
-        "Press any key or click to go back.",
-        "Game",
-        "Use the W,A,S,D keys to control your character.",
-        "Try to reach the end of the level without hitting obstacles.",
-        "Five collisions starts the level over.",
-        "Use ESC key anytime to bring up the in-game menu."
+    helpMenuTex.drawHelpMenu();
+    helpMenuTex.draw();
 
-    };
-
-    glColor3f(1,1,1);
-    float y = H * 0.6f;
-    for (auto s : lines) {
-        glRasterPos2f((W - 9 * (int)std::strlen(s)) * 0.5f, y);
-        for (const char* p = s; *p; ++p)
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *p);
-        y -= 30.f;
-    }
-
-    glPopMatrix(); glMatrixMode(GL_PROJECTION);
-    glPopMatrix(); glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_DEPTH_TEST);
 }
-
-
 
 void HelpScene::recordKey(WPARAM wParam) {
     char buf[64];
