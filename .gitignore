@@ -34,11 +34,16 @@
 *.mod
 *.smod
 
+# Code::Blocsk
+# we keep cbp -- part of source system
+*.depend
+*.layout
+
 # --- CMake / Make / build system ---
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-Makefile
+#Makefile -- we keep Makefile -- part of source system
 build-*/
 compile_commands.json
 
@@ -51,7 +56,6 @@ compile_commands.json
 
 # --- Vscode --- #
 .vscode/
-Makefile
 bin/
 build/
 
