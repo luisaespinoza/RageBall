@@ -56,7 +56,7 @@
 ---
 
 ### **Josh –**
-- **Level01**
+- **Level00**
   - Consists of three mini stages. 
   - The first stage has static targets the player must shoot down. 
   - The second stage has moving targets the player must shoot down.
