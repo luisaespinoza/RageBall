@@ -8,7 +8,7 @@
 
 ## Contributions
 
-### **Luis –**
+### **Luis Alfedo Espinoza–**
 
 #### Core Systems & Architecture
 - **Arena System**  
@@ -87,7 +87,7 @@ The `SceneManager` is the central orchestration layer that coordinates every maj
 
 ---
 
-### **Josh –**
+### **Joshua Bayt –**
 
 #### Level00
 - Three mini stages:
@@ -126,7 +126,7 @@ The `SceneManager` is the central orchestration layer that coordinates every maj
 
 ---
 
-### **Lily –**
+### **Lilyanna Yang –**
 
 #### UIs, Level02, Artwork
 
