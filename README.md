@@ -1,14 +1,15 @@
-# Dodgeball Game README
+# Dodgeball Game
 
-## **Controls**
+## Controls
 - **W A S D** – Movement (Forward / Left / Backward / Right)
 - **Left Mouse** – Launch Dodgeball
 
 ---
 
-## **Contributions**
+## Contributions
 
 ### **Luis –**
+
 #### Core Systems & Architecture
 - **Arena System**  
   - `_arenaRoom.h` → Room configuration, transforms, world/local conversions, midline logic, clamping, obstacle composition.
@@ -34,81 +35,125 @@
 
 #### Level Logic & Progression
 - **Level01 Gameplay Loop**  
-  - `_level01.h/.cpp` → Major subsystem integrating all of Luis’s core systems.
+  - `_level01.h/.cpp` → Major subsystem integrating all of Luis’s core systems.  
   - Key responsibilities:
-    - Arena mode logic (primary gameplay path).
-    - Survival timer handling & level transition signaling.
-    - Enemy spawning with formation presets & per-enemy randomized skins.
-    - Player movement in arena-local space with clamping.
-    - Obstacle collisions and damage.
-    - Camera follow inside either arena or hallway systems.
-    - Charge-shot aiming using cursor-to-local steering and world conversion.
-    - Enemy projectile → player damage, including cooldown.
-    - Player projectile → enemy kill logic.
-    - Health pickup spawning, ring effect timing, and visual scaling.
-#### Game Flow / Scene Infrastructure
-- **Scene Manager**  
-  - `_sceneManager.h` → Scene stack, pause overlays, scene transitions, level loading, global light, input forwarding.
+    - Arena mode logic (primary gameplay path)
+    - Survival timer handling & level transition signaling
+    - Enemy spawning with formation presets & randomized skins
+    - Player movement in arena-local space with clamping
+    - Obstacle collisions and damage
+    - Camera follow inside arena or hallway systems
+    - Charge-shot aiming via cursor-to-local conversions
+    - Enemy projectile → player damage logic
+    - Player projectile → enemy kill logic
+    - Health pickup spawning & visual effects
 
-- **Menu Scene**  
-  - `_menuScene.h` → Main Menu & Pause Menu, selectable 3D menu blocks, bullet-based menu interaction, callbacks for start/resume/help/quit.
+---
+
+### Game Flow / Scene Infrastructure
+
+#### Scene Manager
+
+The `SceneManager` is the central orchestration layer that coordinates every major subsystem of the game. It maintains a full **scene stack**, enabling gameplay scenes, overlays, menus, and pause screens to layer cleanly on top of one another, always updating and rendering in the correct order. It also handles smooth **scene transitions**, **level loading**, and **in-game menus**, ensuring that switching contexts never breaks game flow. Behind the scenes, it forwards input, applies the correct OpenGL projection, and manages global lighting to keep the engine visually consistent. It is the glue that holds the entire project together.
+
+#### Key Responsibilities
+- **Scene Stack Management**  
+  Handles push/pop of scenes, pause overlays, layered UI, and safe stack mutations between frames.
+
+- **Scene Transitions & Flow Control**  
+  Provides clean transitions between gameplay, menus, help screens, game-over handlers, and level states.
+
+- **Level Loading System**  
+  Uses a level registry to construct levels, link progression, and dispatch lifecycle callbacks.
+
+- **Input Forwarding**  
+  Routes Win32 messages & scene-specific input.
+
+- **Rendering Pipeline Setup**  
+  Applies projection changes, configures OpenGL, and ensures proper bottom-to-top rendering.
+
+- **Global Lighting & GL State**  
+  Initializes depth testing, texturing, blending, and global light.
+
+- **In-Game Menu & Overlays**  
+  Preserves gameplay scenes, shows pause overlays, and restores smoothly.
+
+- **Game Over & Reset Handling**  
+  Clears scene stack, restarts levels, or boots main menu with correct callbacks.
+
+#### Menu Scene
+- `_menuScene.h` → Main Menu & Pause Menu  
+  Selectable 3D menu blocks, bullet-driven menu interaction, callbacks for start/resume/help/quit.
 
 ---
 
 ### **Josh –**
-- **Level00**
-  - Consists of three mini stages. 
-  - The first stage has static targets the player must shoot down. 
-  - The second stage has moving targets the player must shoot down.
-  - The third stage has moving "throwers", these are enemies that throw balls forward at random intervals (not aimed towards the player)
-- **Code**
-  -  OBJ Loader
-    - A complete OBJ file loader allowing OBJs to be converted into vertex/vertex normal/vertex texture buffers for graphical rendering
-    - Supports quads/triangles + textures + normals (for lighting)
-  - OBJ Animations
-    - Class that supports OBJ file animations including frames, FPS, animation start/stop/reset, etc
-  - Bounding Boxes
-    - Class that allows for a given model to hold multiple bounding boxes
-    - Allow for simple boolean collisions (mainly used for ball hit detection) or face detection (6 faces total for box)
-    - Used for collision physics and ball bouncing physics
-  - Sound Helper
-    - Modifed existing sound class to support IrrKlang 3D spacial audio
-    - Added volume+pitch adjustments to sound class
-- **Other**
-  - Blender
-    - Made player animations + model -- exported as OBJ files
-    - Made UFO model
-  - CAD
-    - Made map design in CAD -- exported as OBJ files
-  - Sounds
-    - Sound effects including: playerHit, playerDeath, targetHit, throwerHit, throwerDeath all self recorded and edited.
-    - Existing sound effects modified: levelTransition, level music (clipped, fadeIn) effects added. 
+
+#### Level00
+- Three mini stages:
+  - Stage 1: static targets  
+  - Stage 2: moving targets  
+  - Stage 3: moving “throwers” that fire balls randomly
+
+#### Code
+- **OBJ Loader**
+  - Complete OBJ→buffer pipeline  
+  - Supports quads/triangles, textures, normals
+
+- **OBJ Animations**
+  - Frame-based animation system (FPS, start/stop/reset)
+
+- **Bounding Boxes**
+  - Multi-box per model  
+  - Boolean or face-aware collisions  
+  - Used for physics + ball bounces
+
+- **Sound Helper**
+  - Enhanced IrrKlang 3D audio  
+  - Volume + pitch support
+
+#### Other
+- **Blender**
+  - Player animations + model  
+  - UFO model
+
+- **CAD**
+  - Map design exported as OBJ
+
+- **Audio**
+  - Self-recorded SFX (playerHit, enemyHit, deaths, etc.)  
+  - Edited/modified existing sounds (transitions, level music clips/fade)
+
+---
 
 ### **Lily –**
-- **UIs, Level02, Artwork**
-  - **UIs**
-    - Landing Page (`_landingPage.h/.cpp`, `_landingPageHandler.h/.cpp`) → Artwork/Code
-    - Help Screen (`_help.h/.cpp`, `_helpMenu.h/.cpp`) → Artwork/Code
-    - GameOver Screen (`_gameOverScene.h/.cpp`, `_gameOverHandler.h/.cpp`) → Artwork/Code
 
-  - **Level02**
-    - **Enemies**
-      - All enemies move toward the player
-      - Enemies shoot balls randomly
-      - Hitboxes implemented:
-        - Player touches enemy → lose a life
-        - Ball touches enemy → enemy loses life
-        - Enemy hits arena → stays inside
-    
-    - **Cube**
-      - Follows the player and periodically stops
-      - Blocks player shots
-      - Designed to be disruptive / obstructive
-      - Hitbox logic:
-        - Player hits cube → lose a life
-        - Ball hits cube → blocked
-    
-    - **Player** (Level02-specific)
-      - WASD movement
-      - Normal and charged shots
-      - Hitbox interactions consistent with cube & enemy rules
+#### UIs, Level02, Artwork
+
+##### UIs
+- **Landing Page** (`_landingPage.*`) – Artwork + Code  
+- **Help Screen** (`_help.*`, `_helpMenu.*`) – Artwork + Code  
+- **GameOver Screen** (`_gameOverScene.*`, `_gameOverHandler.*`) – Artwork + Code  
+
+##### Level02
+
+###### Enemies
+- Move toward player  
+- Shoot randomly  
+- Hitboxes:
+  - Player touches enemy → lose life  
+  - Ball hits enemy → enemy loses life  
+  - Enemy hits arena → clamped inside  
+
+###### Cube
+- Follows player, periodically stops  
+- Blocks shots  
+- Hitbox:
+  - Player hits cube → lose life  
+  - Ball hits cube → blocked  
+
+###### Player (Level02-specific)
+- WASD movement  
+- Normal + charged shots  
+- Hitbox interactions consistent with cube/enemy rules
+
